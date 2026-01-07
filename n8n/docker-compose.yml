@@ -1,0 +1,49 @@
+# E-Secretary n8n Configuration
+# Run with: docker-compose up -d
+
+version: '3.8'
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: e-secretary-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # General Settings
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      
+      # Performance Optimizations for Large Data
+      - EXECUTIONS_DATA_MAX_AGE=168  # 7 days retention
+      - EXECUTIONS_DATA_PRUNE=true
+      - N8N_PAYLOAD_SIZE_MAX=256     # 256MB max payload
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      
+      # Node execution settings
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      
+      # Timezone
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - TZ=Asia/Kolkata
+      
+    volumes:
+      # Persistent storage for workflows and credentials
+      - n8n_data:/home/node/.n8n
+      # Local files folder for large data processing
+      - ./data:/data
+      
+    # Resource limits for stability
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+volumes:
+  n8n_data:
+    driver: local
