@@ -1,0 +1,425 @@
+/* =========================================
+   LOGIN PAGE STYLES
+   (Adapted from Shadcn/Tailwind Component)
+   ========================================= */
+
+/* Reset & Base */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-body, "Poppins", sans-serif);
+    background: var(--background, #0f172a);
+    color: var(--foreground, #ffffff);
+    height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Back Button */
+.btn-back {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
+    /* Above everything */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(15, 23, 42, 0.6);
+    /* Dark glass */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-back:hover {
+    background: rgba(15, 23, 42, 0.9);
+    transform: translateX(-4px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Layout */
+.login-wrapper {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Left Column */
+.login-left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    z-index: 10;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.login-header h1 {
+    font-family: var(--font-heading, system-ui, sans-serif);
+    font-size: 2.5rem;
+    /* ~text-4xl */
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem 0;
+}
+
+.login-header p {
+    color: var(--muted-foreground, #94a3b8);
+    margin: 0;
+}
+
+/* Form Styles */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted-foreground, #94a3b8);
+    margin-bottom: 0.5rem;
+}
+
+/* Glass Input Wrapper (Replica of GlassInputWrapper) */
+.glass-input-wrapper {
+    position: relative;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    /* bg-foreground/5 */
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.glass-input-wrapper:focus-within {
+    border-color: rgba(59, 130, 246, 0.7);
+    /* Blue-400 equivalent */
+    background: rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.glass-input-wrapper input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 1rem;
+    color: white;
+    font-size: 0.875rem;
+    outline: none;
+    font-family: inherit;
+}
+
+/* Password Toggle */
+.toggle-password {
+    background: none;
+    border: none;
+    color: var(--muted-foreground, #94a3b8);
+    cursor: pointer;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: white;
+}
+
+/* Checkbox & Forgot Password */
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.custom-checkbox {
+    accent-color: var(--primary, #3b82f6);
+    width: 1rem;
+    height: 1rem;
+}
+
+.forgot-password {
+    color: var(--primary, #3b82f6);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.forgot-password:hover {
+    color: var(--cyan, #06b6d4);
+    text-decoration: underline;
+}
+
+/* Buttons */
+.btn-login {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--primary, #3b82f6);
+    color: white;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+.btn-login:hover {
+    background: var(--blue-400, #60a5fa);
+}
+
+.btn-google {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 0.95rem;
+}
+
+.btn-google:hover {
+    background: rgba(255, 255, 255, 0.05);
+    /* bg-secondary */
+}
+
+.google-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Divider */
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    /* border-border */
+    z-index: 0;
+}
+
+.divider span {
+    position: relative;
+    background: var(--background, #0f172a);
+    padding: 0 1rem;
+    color: var(--muted-foreground, #94a3b8);
+    font-size: 0.875rem;
+    z-index: 1;
+}
+
+.create-account-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--muted-foreground, #94a3b8);
+}
+
+.create-account-text a {
+    color: var(--primary, #3b82f6);
+    text-decoration: none;
+}
+
+.create-account-text a:hover {
+    text-decoration: underline;
+}
+
+/* Right Column */
+.login-right {
+    flex: 1;
+    position: relative;
+    padding: 1rem;
+    display: none;
+    /* Hidden on mobile */
+}
+
+@media (min-width: 768px) {
+    .login-right {
+        display: block;
+    }
+}
+
+.hero-bg {
+    position: absolute;
+    inset: 1rem;
+    border-radius: 1.5rem;
+    background-image: url('https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80');
+    background-size: cover;
+    background-position: center;
+}
+
+/* Testimonials */
+.testimonials-container {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0 2rem;
+}
+
+.testimonial-card {
+    background: rgba(30, 41, 59, 0.4);
+    /* bg-card/40 */
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    width: 280px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.testimonial-card img {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 1rem;
+    object-fit: cover;
+}
+
+.author {
+    font-weight: 500;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.handle {
+    font-size: 0.8rem;
+    color: var(--muted-foreground, #94a3b8);
+    margin: 0 0 0.25rem 0;
+}
+
+.text {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+/* Animations */
+.animate-element {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-right {
+    opacity: 0;
+    transform: translateX(-20px);
+    filter: blur(10px);
+    animation: slideRightIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-testimonial {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    animation: testimonialIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeSlideIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideRightIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes testimonialIn {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Delays */
+.delay-100 {
+    animation-delay: 0.1s;
+}
+
+.delay-200 {
+    animation-delay: 0.2s;
+}
+
+.delay-300 {
+    animation-delay: 0.3s;
+}
+
+.delay-400 {
+    animation-delay: 0.4s;
+}
+
+.delay-500 {
+    animation-delay: 0.5s;
+}
+
+.delay-600 {
+    animation-delay: 0.6s;
+}
+
+.delay-700 {
+    animation-delay: 0.7s;
+}
+
+.delay-800 {
+    animation-delay: 0.8s;
+}
+
+.delay-1000 {
+    animation-delay: 1.0s;
+}
+
+.delay-1200 {
+    animation-delay: 1.2s;
+}

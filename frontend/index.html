@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Secretary</title>
+    <!-- Custom SVG Favicon: Blue Rounded Square with "E" -->
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%233b82f6'/%3E%3Ctext x='50' y='70' font-family='Arial, sans-serif' font-size='70' font-weight='bold' fill='white' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="animation_styles.css">
+    <link rel="stylesheet" href="testimonials.css">
+    <link rel="stylesheet" href="integrations.css">
+</head>
+
+<body>
+    <!-- ===== GLOBAL BACKGROUND (PARALLAX + GRID) ===== -->
+    <div id="global-parallax-bg" class="hero-bg"
+        style="position: fixed; inset: 0; z-index: -1; height: 100vh; pointer-events: none;">
+        <!-- Layer 1: Subtle Background Grid -->
+        <svg class="grid-layer grid-base">
+            <defs>
+                <pattern id="grid-pattern-base" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-pattern-base)" />
+        </svg>
+
+        <!-- Layer 2: Highlighted Grid (revealed by mouse) -->
+        <div class="grid-layer grid-highlight">
+            <svg class="grid-svg">
+                <defs>
+                    <pattern id="grid-pattern-highlight" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <!-- Thicker or brighter stroke for highlight -->
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid-pattern-highlight)" />
+            </svg>
+        </div>
+
+        <!-- Decorative Blur Spheres (Global) -->
+        <div class="blur-spheres">
+            <div class="sphere sphere-orange"></div>
+            <div class="sphere sphere-primary"></div>
+            <div class="sphere sphere-blue"></div>
+            <!-- Extra spheres for lower sections -->
+            <div class="sphere sphere-blue" style="top: 120%; left: 80%;"></div>
+            <div class="sphere sphere-primary" style="top: 170%; left: 10%;"></div>
+        </div>
+    </div>
+
+    <!-- ===== TRANSLUCENT HEADER ===== -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <a href="#" class="logo-text-only" data-text="E - SECRETARY"><span></span>E - SECRETARY</span></a>
+
+            <nav class="header-nav">
+                <a href="#features">Features</a>
+                <a href="#timeline">Workflow</a>
+                <a href="#integrations-hero">Integrations</a>
+                <a href="#testimonials">Testimonials</a>
+            </nav>
+
+            <div class="header-actions">
+                <a href="login.html" class="header-link">Sign in</a>
+                <a href="login.html?mode=signup" class="btn-header">Get Started</a>
+            </div>
+
+            <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== INFINITE GRID HERO ===== -->
+    <section class="hero-section" id="heroSection">
+        <div class="hero-bg parallax-layer">
+            <!-- Layer 1: Subtle Background Grid (always visible, very faint) -->
+            <svg class="grid-layer grid-base" id="gridBase">
+                <defs>
+                    <pattern id="grid-pattern-base" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid-pattern-base)" />
+            </svg>
+
+            <!-- Layer 2: Highlighted Grid (revealed by mouse mask) -->
+            <div class="grid-layer grid-highlight" id="gridHighlight">
+                <svg class="grid-svg" id="gridSvgHighlight">
+                    <defs>
+                        <pattern id="grid-pattern-highlight" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid-pattern-highlight)" />
+                </svg>
+            </div>
+
+            <!-- Decorative Blur Spheres -->
+            <div class="blur-spheres">
+                <div class="sphere sphere-orange"></div>
+                <div class="sphere sphere-primary"></div>
+                <div class="sphere sphere-blue"></div>
+            </div>
+        </div>
+
+        <!-- Grid Density Control Panel -->
+        <div class="control-panel" id="controlPanel">
+            <div class="control-header">
+                <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                Grid Density
+            </div>
+            <input type="range" id="gridDensity" min="20" max="100" value="40" class="density-slider">
+            <div class="density-labels">
+                <span>Dense</span>
+                <span id="densityValue">Sparse (40px)</span>
+            </div>
+        </div>
+
+        <!-- Hero Content -->
+        <div class="hero-content">
+            <h1 class="hero-title reveal-up">
+                One inbox for<br>
+                <span class="text-gradient">ALL YOUR WORK</span>
+            </h1>
+            <p class="hero-subtitle reveal-up delay-1" style="text-align: center;">
+                E-Secretary unifies your emails, messages, and meetings into a
+                <strong style="display: block; font-size: 1.3rem; color: white; font-weight: 700; margin: 8px 0;">SINGLE
+                    INTELLIGENT STREAM</strong>
+                AI extracts action items so you can focus on what matters.
+            </p>
+
+            <div class="hero-buttons">
+                <button class="btn-primary" id="btnPrimary" onclick="window.location.href='login.html?mode=signup'">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 15l-2 5L9 9l11 4-5 2z" />
+                        <path d="M14.5 14.5L20 20" />
+                    </svg>
+                    Get Started
+                </button>
+
+                <a href="#features" class="btn-secondary" id="btnSecondary">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4M12 8h.01" />
+                    </svg>
+                    Learn More
+                </a>
+            </div>
+        </div>
+
+
+    </section>
+
+    <!-- ===== FEATURES SECTION - TESTIMONIAL STYLE ===== -->
+    <section class="section features-section" id="features">
+        <div class="container">
+            <div class="features-testimonial">
+                <!-- Oversized index number -->
+                <div class="oversized-number" id="oversizedNumber">01</div>
+
+                <!-- Main content - asymmetric layout -->
+                <div class="features-layout">
+                    <!-- Left column - vertical text -->
+                    <div class="vertical-sidebar">
+                        <span class="vertical-text">Features</span>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Center - main content -->
+                    <div class="features-content">
+                        <!-- Feature badge -->
+                        <div class="feature-badge" id="featureBadge">
+                            <span class="badge-dot"></span>
+                            <span class="badge-text">Unified Inbox</span>
+                        </div>
+
+                        <!-- Feature title with word animation -->
+                        <h2 class="feature-headline" id="featureHeadline">
+                            <span class="word">All</span>
+                            <span class="word">your</span>
+                            <span class="word">emails,</span>
+                            <span class="word">messages,</span>
+                            <span class="word">and</span>
+                            <span class="word">meetings</span>
+                            <span class="word">in</span>
+                            <span class="word">one</span>
+                            <span class="word">intelligent</span>
+                            <span class="word">feed.</span>
+                        </h2>
+
+                        <!-- Feature description -->
+                        <p class="feature-desc" id="featureDesc">Gmail, Slack, Teams, and notifications unified with
+                            AI-powered action extraction.</p>
+
+                        <!-- Author/Feature row -->
+                        <div class="feature-footer">
+                            <div class="feature-meta">
+                                <div class="meta-line"></div>
+                                <div class="meta-info">
+                                    <p class="meta-title" id="metaTitle">Unified Inbox</p>
+                                    <p class="meta-subtitle" id="metaSubtitle">Core Feature</p>
+                                </div>
+                            </div>
+
+                            <!-- Navigation -->
+                            <div class="feature-nav">
+                                <button class="nav-btn" id="prevBtn" aria-label="Previous">
+                                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                                        <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                                <button class="nav-btn" id="nextBtn" aria-label="Next">
+                                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                                        <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom ticker -->
+                <div class="features-ticker" id="integrations-showcase">
+                    <div class="ticker-track">
+                        <span>Unified Inbox • Meeting Intelligence • Smart Tasks • Priority Alerts • Time Analytics •
+                            Enterprise Security • Unified Inbox • Meeting Intelligence • Smart Tasks • Priority Alerts •
+                            Time Analytics • Enterprise Security •</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TIMELINE | JOURNEY ===== -->
+    <section class="section timeline-section" id="timeline">
+        <div class="container relative">
+            <div class="timeline-header reveal">
+                <h2 class="section-title"><span>How E-Secretary Works ?</span></h2>
+                <p class="section-desc">Your intelligent workflow, automated. From input to insight in three steps.</p>
+            </div>
+
+            <div class="timeline-container" id="timelineContainer">
+                <!-- Vertical Progress Line -->
+                <div class="timeline-line-base"></div>
+                <div class="timeline-line-progress" id="timelineProgress"></div>
+
+                <!-- Step 1: Connect -->
+                <div class="timeline-item reveal">
+                    <div class="timeline-marker">
+                        <div class="marker-dot"></div>
+                    </div>
+                    <div class="timeline-left">
+                        <h3 class="timeline-date">01</h3>
+                    </div>
+                    <div class="timeline-right">
+                        <h3 class="timeline-title-mobile">Step 01</h3>
+                        <p class="timeline-desc">Connect & Centralize</p>
+                        <p class="timeline-text">Work happens everywhere, but you shouldn't have to. E-Secretary unifies
+                            your dispersed digital ecosystem into one coherent pipeline.</p>
+
+                        <div class="timeline-features">
+                            <div class="tf-item">
+                                <!-- Reactive Link Icon -->
+                                <div class="tf-icon-anim">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path class="link-1"
+                                            d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                        <path class="link-2"
+                                            d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                    </svg>
+                                </div>
+                                <div><strong>Universal Sync</strong><br>Gmail, Slack, Teams, and Calendar in one feed.
+                                </div>
+                            </div>
+                            <div class="tf-item">
+                                <!-- Reactive Shield Icon -->
+                                <div class="tf-icon-anim">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path class="shield-path" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
+                                </div>
+                                <div><strong>Enterprise Secure</strong><br>SOC-2 compliant end-to-end encryption.</div>
+                            </div>
+                        </div>
+
+                        <!-- UI Mockup: Connected Apps (Reactive) -->
+                        <div class="ui-mockup-card reactive-card" data-tilt>
+                            <div class="glow-border"></div>
+                            <div class="ui-mockup-header">
+                                <span class="ui-dot red"></span>
+                                <span class="ui-dot yellow"></span>
+                                <span class="ui-dot green"></span>
+                                <span class="ui-title">Active Connections</span>
+                            </div>
+                            <div class="ui-mockup-body">
+                                <div class="connection-row hover-lift">
+                                    <div class="conn-icon gmail-bg pulse-ring"><svg viewBox="0 0 24 24" width="16"
+                                            height="16" fill="currentColor">
+                                            <path
+                                                d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" />
+                                        </svg></div>
+                                    <div class="conn-info">
+                                        <div class="conn-name">Work Email</div>
+                                        <div class="conn-status">Syncing...</div>
+                                    </div>
+                                    <div class="conn-check active-cycle"></div>
+                                </div>
+                                <div class="connection-row hover-lift" style="transition-delay: 0.1s">
+                                    <div class="conn-icon slack-bg pulse-ring"><svg viewBox="0 0 24 24" width="16"
+                                            height="16" fill="currentColor">
+                                            <path
+                                                d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.522 2.521 2.527 2.527 0 0 1-2.522-2.521V2.522A2.527 2.527 0 0 1 15.166 0a2.528 2.528 0 0 1 2.522 2.522v6.312zM15.166 18.956a2.528 2.528 0 0 1 2.522 2.521A2.528 2.528 0 0 1 15.166 24a2.527 2.527 0 0 1-2.522-2.522v-2.522h2.522zM15.166 17.688a2.527 2.527 0 0 1-2.522-2.522 2.527 2.527 0 0 1 2.522-2.52h6.312A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.312z" />
+                                        </svg></div>
+                                    <div class="conn-info">
+                                        <div class="conn-name">Team Slack</div>
+                                        <div class="conn-status">Connected</div>
+                                    </div>
+                                    <div class="conn-check active-cycle delay-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Analyze -->
+                <div class="timeline-item reveal">
+                    <div class="timeline-marker">
+                        <div class="marker-dot"></div>
+                    </div>
+                    <div class="timeline-left">
+                        <h3 class="timeline-date">02</h3>
+                    </div>
+                    <div class="timeline-right">
+                        <h3 class="timeline-title-mobile">Step 02</h3>
+                        <p class="timeline-desc">Analyze & Understand</p>
+                        <p class="timeline-text">Our proprietary engine parses thousands of lines of text to isolate
+                            signal from noise. It understands context, urgency, and sentiment.</p>
+
+                        <div class="timeline-features">
+                            <div class="tf-item">
+                                <!-- Reactive Brain Icon -->
+                                <div class="tf-icon-anim">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path class="brain-path"
+                                            d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                                        <path class="brain-path delay-1"
+                                            d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+                                    </svg>
+                                </div>
+                                <div><strong>Context Aware</strong><br>Distinguishes "FYI" from "URGENT".</div>
+                            </div>
+                            <div class="tf-item">
+                                <!-- Reactive Flash Icon -->
+                                <div class="tf-icon-anim">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polygon class="flash-path" points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                    </svg>
+                                </div>
+                                <div><strong>Action Extraction</strong><br>Auto-creates to-do items from chat.</div>
+                            </div>
+                        </div>
+
+                        <!-- UI Mockup: Analysis (Reactive) -->
+                        <div class="ui-mockup-card reactive-card" data-tilt>
+                            <div class="glow-border"></div>
+                            <div class="ui-mockup-header">
+                                <span class="ui-title">Transcript Analysis</span>
+                                <span class="ui-badge pulsing-badge">Processing</span>
+                            </div>
+                            <div class="ui-mockup-body">
+                                <div class="msg-bubble scanning-bubble">
+                                    <div class="scan-beam"></div>
+                                    <div class="msg-line w-75"></div>
+                                    <div class="msg-line w-50"></div>
+                                    <div class="highlight-overlay pop-in">Action Item Detected</div>
+                                </div>
+                                <div class="msg-bubble alt">
+                                    <div class="msg-line w-60"></div>
+                                    <div class="msg-line w-40"></div>
+                                </div>
+                                <div class="analysis-tag-row">
+                                    <span class="a-tag fade-in-tag" style="--i:1">#Urgent</span>
+                                    <span class="a-tag fade-in-tag" style="--i:2">#Finance</span>
+                                    <span class="a-tag fade-in-tag" style="--i:3">@Sarah</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Action -->
+                <div class="timeline-item reveal">
+                    <div class="timeline-marker">
+                        <div class="marker-dot"></div>
+                    </div>
+                    <div class="timeline-left">
+                        <h3 class="timeline-date">03</h3>
+                    </div>
+                    <div class="timeline-right">
+                        <h3 class="timeline-title-mobile">Step 03</h3>
+                        <p class="timeline-desc">Sort & Inform</p>
+                        <p class="timeline-text">Start your day with clarity. A prioritized briefing of exactly what
+                            requires your attention, and nothing else.</p>
+
+                        <div class="timeline-features">
+                            <div class="tf-item">
+                                <!-- Reactive Chart Icon -->
+                                <div class="tf-icon-anim">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line class="chart-bar" x1="18" y1="20" x2="18" y2="10" />
+                                        <line class="chart-bar delay-1" x1="12" y1="20" x2="12" y2="4" />
+                                        <line class="chart-bar delay-2" x1="6" y1="20" x2="6" y2="14" />
+                                    </svg>
+                                </div>
+                                <div><strong>Daily Briefing</strong><br>Your focused morning executive summary.</div>
+                            </div>
+                            <div class="tf-item">
+                                <!-- Reactive Target Icon -->
+                                <div class="tf-icon-anim">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="6" />
+                                        <circle class="target-center" cx="12" cy="12" r="2" />
+                                    </svg>
+                                </div>
+                                <div><strong>Auto-Prioritization</strong><br>Tasks ranked by deadline and impact.</div>
+                            </div>
+                        </div>
+
+                        <!-- UI Mockup: Task List (Reactive) -->
+                        <div class="ui-mockup-card reactive-card" data-tilt>
+                            <div class="glow-border"></div>
+                            <div class="ui-mockup-header">
+                                <span class="ui-title">Your Daily Briefing</span>
+                            </div>
+                            <div class="ui-mockup-body">
+                                <div class="task-row high-priority hover-scale">
+                                    <div class="task-check"></div>
+                                    <div class="task-content">
+                                        <div class="task-title">Review Q3 Budget</div>
+                                        <div class="task-meta">From: Design Sync • Due Today</div>
+                                    </div>
+                                    <span class="priority-badge strobe">High</span>
+                                </div>
+                                <div class="task-row hover-scale" style="transition-delay: 0.1s">
+                                    <div class="task-check"></div>
+                                    <div class="task-content">
+                                        <div class="task-title">Approve New Hiring Plan</div>
+                                        <div class="task-meta">From: HR Email • Tomorrow</div>
+                                    </div>
+                                    <span class="priority-badge medium">Med</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ===== INTEGRATIONS HERO SECTION ===== -->
+    <section class="section integrations-section" id="integrations-hero">
+        <!-- Reusing the Parallax Grid Background Structure -->
+        <div class="hero-bg parallax-layer" style="opacity: 0.6;">
+            <!-- Layer 1: Subtle Background Grid -->
+            <svg class="grid-layer grid-base">
+                <rect width="100%" height="100%" fill="url(#grid-pattern-base)" />
+            </svg>
+
+            <!-- Layer 2: Highlighted Grid (revealed by global body mask or mouse) -->
+            <div class="grid-layer grid-highlight">
+                <svg class="grid-svg">
+                    <rect width="100%" height="100%" fill="url(#grid-pattern-highlight)" />
+                </svg>
+            </div>
+
+            <!-- Decorative Spheres for Continuity -->
+            <div class="blur-spheres">
+                <div class="sphere sphere-blue" style="top: 20%; left: 80%;"></div>
+                <div class="sphere sphere-primary" style="top: 70%; left: 10%;"></div>
+            </div>
+        </div>
+
+        <div class="container relative">
+            <div class="section-header">
+                <h2 class="section-title"><span>Integrate with your favorite tools</span></h2>
+                <div class="flex justify-center" style="display:flex; justify-content:center; margin-top: 20px;">
+                    <p class="hero-subtitle" style="text-align: center; max-width: 600px; margin-bottom: 0;">Several Top
+                        apps are available to integrate seamlessly with your workflow.</p>
+                </div>
+            </div>
+
+            <div class="integrations-marquee-wrapper">
+                <!-- Fade Overlays -->
+                <div class="marquee-fade left"></div>
+                <div class="marquee-fade right"></div>
+
+                <!-- Row 1: Left Scroll -->
+                <div class="marquee-row scroll-left" id="marqueeRow1">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Row 2: Right Scroll -->
+                <div class="marquee-row scroll-right" id="marqueeRow2">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+
+        </div>
+    </section>
+
+    <!-- ===== TESTIMONIALS SECTION ===== -->
+    <section class="section testimonials-section" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title"><span>What our users say</span></h2>
+                <div class="flex justify-center" style="display:flex; justify-content:center; margin-top: 20px;">
+                    <p class="hero-subtitle" style="text-align: center; max-width: 540px; margin-bottom: 0;">See what
+                        our customers have to say about us.</p>
+                </div>
+            </div>
+
+            <div class="testimonials-grid" id="testimonialsGrid">
+                <!-- Columns injected via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER WITH MENUS ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-main">
+                <!-- Brand -->
+                <div class="footer-brand">
+                    <a href="#" class="footer-logo">E-SECRETARY</a>
+                    <p>Your intelligent work communication hub. Unify, analyze, and act.</p>
+                </div>
+
+                <!-- Links -->
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4>Product</h4>
+                        <a href="#features">Features</a>
+                        <a href="#how-it-works">How it works</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Company</h4>
+                        <a href="#">About</a>
+                        <a href="#">Blog</a>
+                        <a href="#">Contact</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Legal</h4>
+                        <a href="#">Privacy</a>
+                        <a href="#">Terms</a>
+                        <a href="#">Security</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>© 2026 E-Secretary. All rights reserved.</p>
+
+                <!-- Sedin Branding -->
+                <div class="sedin-branding" style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.85rem; color: var(--muted-foreground);">An proud product of
+                        <strong>Sedin</strong></span>
+                    <img src="file:///C:/Users/priya/.gemini/antigravity/brain/d62faac1-599a-428c-b3d1-712be4a89cdc/uploaded_image_1767677798153.png"
+                        alt="Sedin Technologies" style="height: 18px; opacity: 0.9;">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

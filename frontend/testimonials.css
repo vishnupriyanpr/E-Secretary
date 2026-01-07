@@ -1,0 +1,126 @@
+/* ========================================
+   TESTIMONIALS - INFINITE SCROLL
+   ======================================== */
+
+.testimonials-section {
+    padding-bottom: 100px;
+    overflow: hidden;
+    background: var(--background);
+    /* Mask fade top/bottom */
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+}
+
+.testimonials-grid {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    height: 700px;
+    /* Fixed height for scroll area */
+    overflow: hidden;
+    position: relative;
+    margin-top: 40px;
+}
+
+.testim-col {
+    width: 340px;
+    flex-shrink: 0;
+    position: relative;
+    /* Create a separate layer for smoother animation */
+    will-change: transform;
+}
+
+/* Hide outer columns on smaller screens */
+@media (max-width: 1024px) {
+    .testim-col:nth-child(3) {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .testim-col:nth-child(2) {
+        display: none;
+    }
+
+    .testimonials-grid {
+        justify-content: center;
+    }
+}
+
+.testim-mover {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    /* Animation applied inline via JS or default here */
+}
+
+/* The Card Style */
+.testim-card {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 24px;
+    padding: 32px;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+}
+
+.testim-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(30, 41, 59, 0.6);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.testim-text {
+    font-size: 0.95rem;
+    color: var(--foreground);
+    line-height: 1.6;
+    margin-bottom: 24px;
+    text-align: justify;
+}
+
+.testim-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.testim-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.testim-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.testim-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.testim-role {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    font-size: 12px;
+}
+
+
+/* Keyframes */
+@keyframes verticalScroll {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-50%);
+    }
+
+    /* Moves exactly half way (since content is doubled) */
+}
