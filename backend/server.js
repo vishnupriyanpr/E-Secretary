@@ -133,6 +133,10 @@ app.use('/api/webhook', webhookRouter);
 const calendarRouter = require('./routes/calendar');
 app.use('/api/calendar', calendarRouter);
 
+// Fireflies routes (Meeting transcripts)
+const firefliesRouter = require('./routes/fireflies');
+app.use('/api/fireflies', firefliesRouter);
+
 // Serve static files (frontend)
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/dashboard', express.static(path.join(__dirname, '..')));

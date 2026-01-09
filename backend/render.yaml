@@ -1,32 +1,27 @@
-# Render.com Deployment Configuration
-# https://render.com/docs/deploy-node-express-app
-
 services:
   - type: web
-    name: e-secretary-api
+    name: e-secretary-backend
     env: node
-    region: singapore  # Closest to India
+    region: ohio
     plan: free
     buildCommand: npm install
     startCommand: npm start
+    branch: main
+    rootDir: backend
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: JWT_SECRET
-        sync: false  # Set manually in Render dashboard
-      - key: DB_HOST
-        value: aws-1-ap-south-1.pooler.supabase.com
-      - key: DB_PORT
-        value: 6543
-      - key: DB_NAME
-        value: postgres
-      - key: DB_USER
-        sync: false  # Set manually
-      - key: DB_PASSWORD
-        sync: false  # Set manually
-      - key: DB_SSL
-        value: true
-      - key: N8N_WEBHOOK_URL
-        sync: false  # Your Render n8n URL
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FIREFLIES_API_KEY
+        sync: false
