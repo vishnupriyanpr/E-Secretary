@@ -8,15 +8,16 @@ const CONFIG = {
     // Local development
     // API_URL: 'http://localhost:3001/api',
 
-    // Production (Render) - Replace with your actual Render URL
-    API_URL: window.location.hostname === 'localhost'
+    // Production (Render)
+    // IMPORTANT: After deploying backend to Render, copy the URL and paste it here
+    API_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:3001/api'
-        : 'https://e-secretary-api.onrender.com/api',  // <-- Replace with your Render URL
+        : 'https://e-secretary-backend.onrender.com/api', // <--- REPLACE THIS WITH YOUR ACTUAL RENDER BACKEND URL
 
     // n8n URL (for dashboard status check)
-    N8N_URL: window.location.hostname === 'localhost'
+    N8N_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:5678'
-        : 'https://e-secretary-beta.onrender.com',  // n8n deployed on Render
+        : 'https://e-secretary-n8n.onrender.com', // <--- REPLACE WITH YOUR N8N URL
 
     // Refresh interval for dashboard
     REFRESH_INTERVAL: 30000,

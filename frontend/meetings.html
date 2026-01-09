@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | E-Secretary</title>
+    <title>Meetings | E-Secretary</title>
     <link rel="icon"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%233b82f6'/%3E%3Ctext x='50' y='70' font-family='Arial, sans-serif' font-size='70' font-weight='bold' fill='white' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,7 +30,7 @@
         </div>
 
         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item active" data-section="dashboard">
+            <a href="dashboard.html" class="nav-item" data-section="dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="9" rx="1" />
                     <rect x="14" y="3" width="7" height="5" rx="1" />
@@ -39,7 +39,7 @@
                 </svg>
                 Dashboard
             </a>
-            <a href="meetings.html" class="nav-item" data-section="meetings">
+            <a href="meetings.html" class="nav-item active" data-section="meetings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path
                         d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
@@ -104,11 +104,11 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Header with Time-based Greeting -->
+        <!-- Header -->
         <header class="dashboard-header">
             <div class="header-left">
-                <h1 id="greeting">Good morning</h1>
-                <p class="header-subtitle" id="greetingSub">Welcome back! Here's your meeting summary overview.</p>
+                <h1>Meetings</h1>
+                <p class="header-subtitle">View and manage your meeting records</p>
             </div>
             <div class="header-right">
                 <!-- Connect Calendar Button -->
@@ -134,60 +134,35 @@
             </div>
         </header>
 
-        <!-- Stats Cards -->
-        <section class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon blue">
+        <!-- Recent Meetings -->
+        <section class="meetings-section">
+            <div class="section-header">
+                <h2>Recent Meetings</h2>
+                <button class="refresh-btn" id="refreshBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10" />
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <div class="meetings-list" id="meetingsList">
+                <!-- Placeholder when no meetings -->
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path
                             d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                        <path d="M12 14v.01M12 17v.01" />
                     </svg>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-value" id="totalMeetings">0</span>
-                    <span class="stat-label">Total Meetings</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon yellow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-value" id="pendingApproval">0</span>
-                    <span class="stat-label">Pending Approval</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-value" id="completedMeetings">0</span>
-                    <span class="stat-label">Completed</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                        <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-value" id="emailsSent">0</span>
-                    <span class="stat-label">Emails Sent</span>
+                    <h3>No meetings yet</h3>
+                    <p>When Fireflies sends meeting transcripts, they'll appear here.</p>
                 </div>
             </div>
         </section>
 
-        <!-- Upcoming Events Section (Cloned) -->
-        <section class="calendar-events-section" id="calendarSection" style="display: none; margin-top: 2rem;">
+        <!-- Google Calendar Events - Premium UI -->
+        <section class="calendar-events-section" id="calendarSection" style="display: none;">
             <div class="section-header">
                 <h2>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"
@@ -207,9 +182,6 @@
                         </svg>
                         Sync
                     </button>
-                    <a href="calendar.html" class="view-all-link"
-                        style="color: var(--primary); text-decoration: none; font-size: 0.9rem; margin-left: 1rem;">View
-                        All</a>
                 </div>
             </div>
 
@@ -219,83 +191,6 @@
                     <div class="loading-spinner"></div>
                     <p>Loading calendar events...</p>
                 </div>
-            </div>
-        </section>
-
-        <!-- Quick Access Section -->
-        <section class="quick-access-section">
-            <div class="section-header">
-                <h2>Quick Access</h2>
-            </div>
-            <div class="quick-access-grid">
-                <a href="meetings.html" class="quick-access-card">
-                    <div class="quick-access-icon blue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path
-                                d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
-                        </svg>
-                    </div>
-                    <div class="quick-access-content">
-                        <h3>Meetings</h3>
-                        <p>View recent meetings and upcoming events</p>
-                    </div>
-                    <svg class="quick-access-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </a>
-                <a href="transcripts.html" class="quick-access-card">
-                    <div class="quick-access-icon purple">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                            <line x1="12" y1="19" x2="12" y2="23" />
-                            <line x1="8" y1="23" x2="16" y2="23" />
-                        </svg>
-                    </div>
-                    <div class="quick-access-content">
-                        <h3>Transcripts</h3>
-                        <p>Access Fireflies meeting transcripts</p>
-                    </div>
-                    <svg class="quick-access-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </a>
-                <a href="calendar.html" class="quick-access-card">
-                    <div class="quick-access-icon green">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                    </div>
-                    <div class="quick-access-content">
-                        <h3>Calendar</h3>
-                        <p>View and manage Google Calendar</p>
-                    </div>
-                    <svg class="quick-access-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </a>
-                <a href="workflow.html" class="quick-access-card">
-                    <div class="quick-access-icon yellow">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path
-                                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                        </svg>
-                    </div>
-                    <div class="quick-access-content">
-                        <h3>Workflows</h3>
-                        <p>n8n automation workflows</p>
-                    </div>
-                    <svg class="quick-access-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </a>
             </div>
         </section>
     </main>

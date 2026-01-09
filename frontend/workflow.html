@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflows | E-Secretary</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%233b82f6'/%3E%3Ctext x='50' y='70' font-family='Arial, sans-serif' font-size='70' font-weight='bold' fill='white' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+    <div class="dashboard-bg">
+        <div class="blur-sphere sphere-1"></div>
+        <div class="blur-sphere sphere-2"></div>
+        <div class="blur-sphere sphere-3"></div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">E</span>
+                <span class="logo-text">E-Secretary</span>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <rect x="3" y="3" width="7" height="9" rx="1" />
+                    <rect x="14" y="3" width="7" height="5" rx="1" />
+                    <rect x="14" y="12" width="7" height="9" rx="1" />
+                    <rect x="3" y="16" width="7" height="5" rx="1" />
+                </svg>Dashboard</a>
+            <a href="meetings.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path
+                        d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                </svg>Meetings</a>
+            <a href="transcripts.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>Transcripts</a>
+            <a href="calendar.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <circle cx="12" cy="16" r="2" />
+                </svg>Calendar</a>
+            <a href="workflow.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path
+                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>Workflow</a>
+            <a href="settings.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>Settings</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar"
+                    style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center;">
+                    U</div>
+                <div class="user-details" style="overflow: hidden;">
+                    <span class="user-name" id="userName"
+                        style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">User</span>
+                    <span class="user-email" id="userEmail"
+                        style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; opacity: 0.8;">user@email.com</span>
+                </div>
+            </div>
+            <button class="logout-btn" id="logoutBtn" title="Logout"><svg viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1>Workflows</h1>
+                <p class="header-subtitle">Manage your n8n automation workflows</p>
+            </div>
+            <div class="header-right">
+                <div class="n8n-status" id="n8nStatus"><span class="status-dot offline"></span><span>n8n:
+                        Checking...</span></div>
+            </div>
+        </header>
+
+        <section class="workflow-section">
+            <div class="section-header">
+                <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"
+                        style="display: inline; vertical-align: middle; margin-right: 8px;">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>n8n Workflows</h2>
+                <a href="https://e-secretary-beta.onrender.com" target="_blank" class="open-n8n-btn">Open n8n
+                    Dashboard<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                    </svg></a>
+            </div>
+            <div class="workflows-grid">
+                <div class="workflow-card-full">
+                    <div class="workflow-icon mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg></div>
+                    <div class="workflow-details">
+                        <h3>Mailing Host & Attendees</h3>
+                        <p>Fireflies → Gemini AI → Email Approval → Attendees</p>
+                        <div class="workflow-tags"><span class="workflow-tag">Email</span><span class="workflow-tag">AI
+                                Summary</span><span class="workflow-tag">Approval</span></div>
+                    </div>
+                    <div class="workflow-actions">
+                        <button class="workflow-preview-btn" onclick="toggleWorkflowEmbed('mailing')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Preview
+                        </button>
+                        <a href="https://e-secretary-beta.onrender.com/workflow/NsqsQdmWGXNW0I8f" target="_blank"
+                            class="workflow-open-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>Open</a>
+                    </div>
+                </div>
+                <div class="workflow-card-full">
+                    <div class="workflow-icon slack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="11" width="5" height="7" rx="1" />
+                            <rect x="9" y="6" width="5" height="12" rx="1" />
+                            <rect x="15" y="9" width="5" height="9" rx="1" />
+                        </svg></div>
+                    <div class="workflow-details">
+                        <h3>Slack Monitoring</h3>
+                        <p>Slack → Groq AI → Twilio Call & SMS Alerts</p>
+                        <div class="workflow-tags"><span class="workflow-tag">Slack</span><span class="workflow-tag">AI
+                                Analysis</span><span class="workflow-tag">Alerts</span></div>
+                    </div>
+                    <div class="workflow-actions">
+                        <button class="workflow-preview-btn" onclick="toggleWorkflowEmbed('slack')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Preview
+                        </button>
+                        <a href="https://e-secretary-beta.onrender.com/workflow/qxzGHTkVG-mtlV51w8xWJ" target="_blank"
+                            class="workflow-open-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>Open</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Embedded Workflow: Mailing Host & Attendees -->
+        <section class="embedded-workflow-section" id="mailingWorkflowSection" style="display: none;">
+            <div class="section-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"
+                        style="display: inline; vertical-align: middle; margin-right: 8px;">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    Mailing Host & Attendees Workflow
+                </h2>
+                <button class="close-calendar-btn" onclick="toggleWorkflowEmbed('mailing')" title="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="workflow-image-container">
+                <img src="mailing-workflow.png" alt="Mailing Host & Attendees Workflow" class="workflow-preview-image">
+                <a href="https://e-secretary-beta.onrender.com/workflow/NsqsQdmWGXNW0I8f" target="_blank"
+                    class="workflow-overlay-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Open in n8n
+                </a>
+            </div>
+        </section>
+
+        <!-- Embedded Workflow: Slack Monitoring -->
+        <section class="embedded-workflow-section" id="slackWorkflowSection" style="display: none;">
+            <div class="section-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"
+                        style="display: inline; vertical-align: middle; margin-right: 8px;">
+                        <rect x="3" y="11" width="5" height="7" rx="1" />
+                        <rect x="9" y="6" width="5" height="12" rx="1" />
+                        <rect x="15" y="9" width="5" height="9" rx="1" />
+                    </svg>
+                    Slack Monitoring Workflow
+                </h2>
+                <button class="close-calendar-btn" onclick="toggleWorkflowEmbed('slack')" title="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="workflow-image-container">
+                <img src="slack-workflow.png" alt="Slack Monitoring Workflow" class="workflow-preview-image">
+                <a href="https://e-secretary-beta.onrender.com/workflow/qxzGHTkVG-mtlV51w8xWJ" target="_blank"
+                    class="workflow-overlay-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Open in n8n
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        // Toggle workflow preview visibility
+        function toggleWorkflowEmbed(workflow) {
+            const mailingSection = document.getElementById('mailingWorkflowSection');
+            const slackSection = document.getElementById('slackWorkflowSection');
+
+            if (workflow === 'mailing') {
+                if (mailingSection.style.display === 'none') {
+                    mailingSection.style.display = 'block';
+                    slackSection.style.display = 'none';
+                    mailingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    mailingSection.style.display = 'none';
+                }
+            } else if (workflow === 'slack') {
+                if (slackSection.style.display === 'none') {
+                    slackSection.style.display = 'block';
+                    mailingSection.style.display = 'none';
+                    slackSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    slackSection.style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
