@@ -1,26 +1,40 @@
 /**
  * E-Secretary Dashboard Styles
- * Glassmorphism + Blue Theme
+ * Matching Landing Page Design - Stunning Blue Theme with Glassmorphism
  */
 
 :root {
+    /* Landing Page Color Palette */
+    --background: #030712;
     --bg-primary: #0f172a;
     --bg-secondary: #1e293b;
     --bg-tertiary: #334155;
+    --foreground: #f8fafc;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
+
+    /* Blue Palette */
     --blue-400: #60a5fa;
     --blue-500: #3b82f6;
     --blue-600: #2563eb;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-glow: rgba(59, 130, 246, 0.4);
+
+    /* Accent Colors */
     --cyan: #22d3ee;
     --green: #22c55e;
     --yellow: #eab308;
     --red: #ef4444;
     --purple: #a855f7;
+    --amber: #f59e0b;
+
+    /* Glass Effects */
     --border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(30, 41, 59, 0.8);
+    --glass-bg: rgba(30, 41, 59, 0.6);
     --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: blur(20px);
 }
 
 * {
@@ -30,12 +44,77 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--background);
     color: var(--text-primary);
     display: flex;
     min-height: 100vh;
     overflow-x: hidden;
+    position: relative;
+}
+
+/* ========== BLUR SPHERES BACKGROUND ========== */
+.dashboard-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.blur-sphere {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.4;
+    animation: float 20s ease-in-out infinite;
+}
+
+.blur-sphere.sphere-1 {
+    width: 400px;
+    height: 400px;
+    background: var(--primary);
+    top: -100px;
+    right: -100px;
+    animation-delay: 0s;
+}
+
+.blur-sphere.sphere-2 {
+    width: 300px;
+    height: 300px;
+    background: var(--purple);
+    bottom: 10%;
+    left: -50px;
+    animation-delay: -5s;
+}
+
+.blur-sphere.sphere-3 {
+    width: 250px;
+    height: 250px;
+    background: var(--cyan);
+    top: 50%;
+    right: 20%;
+    animation-delay: -10s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    25% {
+        transform: translate(20px, -30px) scale(1.05);
+    }
+
+    50% {
+        transform: translate(-10px, 20px) scale(0.95);
+    }
+
+    75% {
+        transform: translate(30px, 10px) scale(1.02);
+    }
 }
 
 /* Sidebar */
@@ -162,13 +241,17 @@ body {
     padding: 8px;
     border-radius: 8px;
     cursor: pointer;
-    color: var(--text-muted);
+    color: #ef4444;
+    /* Explicitly red */
+    background: rgba(239, 68, 68, 0.1);
+    /* Explicitly visible background */
+    font-weight: bold;
     transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--red);
+    background: #ef4444;
+    color: white;
 }
 
 .logout-btn svg {
@@ -228,6 +311,40 @@ body {
 
 .status-dot.offline {
     background: var(--red);
+}
+
+/* Connect Calendar Button */
+.connect-calendar-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--primary), var(--cyan));
+    border: none;
+    border-radius: 999px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.connect-calendar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.calendar-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    color: var(--green);
 }
 
 /* Stats Grid */

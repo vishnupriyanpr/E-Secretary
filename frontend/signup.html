@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - E-Secretary</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png"
+        href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png">
+
+    <!-- System Fonts & Icons -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="login.css">
+
+    <!-- Compact Signup Styles -->
+    <style>
+        /* Make form more compact for signup page */
+        .login-container {
+            padding: 2rem !important;
+        }
+
+        .login-header {
+            margin-bottom: 0.25rem !important;
+        }
+
+        .login-header h1 {
+            font-size: 2.2rem !important;
+            margin-bottom: 0.1rem !important;
+        }
+
+        .login-header p {
+            font-size: 0.85rem !important;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem !important;
+        }
+
+        .form-group label {
+            font-size: 0.8rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+
+        .glass-input-wrapper input {
+            padding: 0.6rem 0.75rem !important;
+            font-size: 0.85rem !important;
+        }
+
+        .btn-login {
+            padding: 0.75rem !important;
+            margin-top: 0.5rem !important;
+        }
+
+        .divider {
+            margin: 0.75rem 0 !important;
+            font-size: 0.75rem !important;
+        }
+
+        .btn-google {
+            padding: 0.6rem !important;
+            font-size: 0.85rem !important;
+        }
+
+        .create-account-text {
+            margin-top: 0.75rem !important;
+            font-size: 0.85rem !important;
+        }
+
+        .sedin-branding {
+            margin-top: 1rem !important;
+            padding-top: 0.75rem !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Back to Home Button -->
+    <a href="index.html" class="btn-back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+        </svg>
+        Back to Home
+    </a>
+
+    <div class="login-wrapper">
+        <!-- Left Column: Sign Up Form -->
+        <section class="login-left">
+            <div class="login-container">
+                <div class="login-header animate-element delay-100">
+                    <h1>Create an Account</h1>
+                </div>
+
+                <form class="login-form" id="signupForm">
+                    <!-- Full Name -->
+                    <div class="form-group animate-element delay-150">
+                        <label>Full Name</label>
+                        <div class="glass-input-wrapper">
+                            <input type="text" name="name" placeholder="Enter your full name" required>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group animate-element delay-200">
+                        <label>Email Address</label>
+                        <div class="glass-input-wrapper">
+                            <input type="email" name="email" placeholder="Enter your email address" required>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group animate-element delay-300">
+                        <label>Password</label>
+                        <div class="glass-input-wrapper">
+                            <input type="password" name="password" id="passwordInput"
+                                placeholder="Create a password (min 6 characters)" required minlength="6">
+                            <button type="button" class="toggle-password" id="togglePassword">
+                                <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                                <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" style="display:none;">
+                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                                    <path
+                                        d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                                    <line x1="2" y1="2" x2="22" y2="22" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="form-group animate-element delay-350">
+                        <label>Confirm Password</label>
+                        <div class="glass-input-wrapper">
+                            <input type="password" name="confirm_password" placeholder="Confirm your password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login animate-element delay-500">Create Account</button>
+                </form>
+
+                <div class="divider animate-element delay-600">
+                    <span>Or continue with</span>
+                </div>
+
+                <button type="button" class="btn-google animate-element delay-700"
+                    onclick="alert('Google Sign Up Coming Soon!')">
+                    <svg class="google-icon" viewBox="0 0 48 48">
+                        <path fill="#FFC107"
+                            d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s12-5.373 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-2.641-.21-5.236-.611-7.743z" />
+                        <path fill="#FF3D00"
+                            d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                        <path fill="#4CAF50"
+                            d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+                        <path fill="#1976D2"
+                            d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.022 35.026 44 30.038 44 24c0-2.641-.21-5.236-.611-7.743z" />
+                    </svg>
+                    Continue with Google
+                </button>
+
+                <p class="create-account-text animate-element delay-800">
+                    Already have an account? <a href="login.html">Sign In</a>
+                </p>
+
+                <!-- Sedin Branding -->
+                <div class="sedin-branding animate-element delay-800"
+                    style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <span style="font-size: 0.85rem; color: rgba(255,255,255,0.5);">A proud product of</span>
+                    <img src="sedin-logo.png" alt="Sedin" style="height: 17px; opacity: 0.85;">
+                    <span style="font-size: 0.9rem; font-weight: 600; color: white;">Sedin</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Hero Image + Testimonials -->
+        <section class="login-right">
+            <div class="hero-bg animate-slide-right delay-300"></div>
+
+            <div class="testimonials-container">
+                <!-- Testimonial -->
+                <div class="testimonial-card animate-testimonial delay-1000">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="John">
+                    <div class="testimonial-content">
+                        <p class="author">John Martinez</p>
+                        <p class="handle">@johntech</p>
+                        <p class="text">"E-Secretary has transformed how I manage my meetings. The AI summaries are
+                            incredibly accurate!"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Load config for API URLs -->
+    <script src="config.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Signup Logic -->
+    <script>
+        // Password Toggle
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('passwordInput');
+        const eyeOpen = document.querySelector('.eye-open');
+        const eyeClosed = document.querySelector('.eye-closed');
+
+        toggleBtn.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            if (type === 'text') {
+                eyeOpen.style.display = 'none';
+                eyeClosed.style.display = 'block';
+            } else {
+                eyeOpen.style.display = 'block';
+                eyeClosed.style.display = 'none';
+            }
+        });
+
+        // Wrap in DOMContentLoaded to ensure elements are ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Signup page loaded, initializing...');
+
+            // Form Submit - Connect to Backend API (Supabase)
+            const CONFIG = window.E_SECRETARY_CONFIG || {};
+            const API_URL = CONFIG.API_URL || 'http://localhost:3001/api';
+
+            const signupForm = document.getElementById('signupForm');
+            const submitBtn = document.querySelector('.btn-login');
+
+            if (!signupForm) {
+                console.error('ERROR: Signup form not found!');
+                return;
+            }
+
+            console.log('Attaching submit listener to form');
+            signupForm.addEventListener('submit', async (e) => {
+                console.log('Form submitted!');
+                e.preventDefault(); // CRITICAL: Stop reload
+
+                const name = e.target.name.value.trim();
+                const email = e.target.email.value.trim();
+                const password = e.target.password.value;
+                const confirmPassword = e.target.confirm_password.value;
+
+                // Validation
+                if (!name) {
+                    showError('Please enter your full name');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match');
+                    return;
+                }
+                if (password.length < 6) {
+                    showError('Password must be at least 6 characters');
+                    return;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner"></span> Creating account...';
+
+                try {
+                    const response = await fetch(API_URL + '/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, name })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || 'Registration failed');
+                    }
+
+                    // Store token and user data in localStorage
+                    localStorage.setItem('e_secretary_token', data.token);
+                    localStorage.setItem('e_secretary_user', JSON.stringify(data.user));
+
+                    // Redirect to dashboard
+                    window.location.href = 'dashboard.html';
+
+                } catch (error) {
+                    showError(error.message || 'Something went wrong. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            });
+
+            // CSS for spinner and shake
+            const style = document.createElement('style');
+            style.textContent = `
+            @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+            .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+        `;
+            document.head.appendChild(style);
+        });
+
+        // --- Google Sign-In Integration ---
+        function handleCredentialResponse(response) {
+            console.log("Encoded JWT ID token: " + response.credential);
+
+            // Send token to backend
+            const CONFIG = window.E_SECRETARY_CONFIG || {};
+            const API_URL = CONFIG.API_URL || 'http://localhost:3001/api';
+
+            fetch(API_URL + '/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: response.credential,
+                    mode: 'signup' // Allow creation
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('e_secretary_token', data.token);
+                        localStorage.setItem('e_secretary_user', JSON.stringify(data.user));
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        showError(data.error || 'Google Sign-Up failed');
+                    }
+                })
+                .catch(err => {
+                    console.error('Google Auth Error:', err);
+                    showError('Google authentication failed. Please try again.');
+                });
+        }
+
+        window.onload = function () {
+            const CONFIG = window.E_SECRETARY_CONFIG || {};
+            if (window.google) {
+                google.accounts.id.initialize({
+                    client_id: CONFIG.GOOGLE_CLIENT_ID,
+                    auto_select: false,
+                    callback: handleCredentialResponse
+                });
+
+                // Render the Google button
+                const googleBtnContainer = document.querySelector('.btn-google').parentElement;
+
+                // Create a container for the actual Google button
+                const googleDiv = document.createElement('div');
+                googleDiv.id = 'google_btn_container_signup';
+                googleDiv.style.width = '100%';
+
+                // Replace the dummy button
+                const dummyBtn = document.querySelector('.btn-google');
+                if (dummyBtn) {
+                    googleBtnContainer.replaceChild(googleDiv, dummyBtn);
+
+                    google.accounts.id.renderButton(
+                        document.getElementById("google_btn_container_signup"),
+                        { theme: "filled_blue", size: "large", width: "100%", text: "signup_with" }
+                    );
+                }
+            }
+        };
+
+        function showError(message) {
+            const existingError = document.querySelector('.error-message');
+            if (existingError) existingError.remove();
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                ${message}
+            `;
+            // Re-using existing styles from the page
+            errorDiv.style.cssText = `
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.3);
+                color: #f87171;
+                padding: 12px 16px;
+                border-radius: 8px;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9rem;
+                animation: shake 0.5s ease;
+            `;
+            const signupForm = document.getElementById('signupForm');
+            if (signupForm) signupForm.insertBefore(errorDiv, signupForm.firstChild);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+    </script>
+</body>
+
+</html>

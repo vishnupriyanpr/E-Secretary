@@ -1,0 +1,190 @@
+{
+    "name": "E-Secretary: Reply Detector (Standalone)",
+    "nodes": [
+        {
+            "parameters": {
+                "pollTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinute"
+                        }
+                    ]
+                },
+                "simple": false,
+                "filters": {
+                    "q": "subject:(Meeting Summary) OR subject:(Review Required) is:unread newer_than:3h"
+                }
+            },
+            "id": "gmail-reader",
+            "name": "📧 Poll Gmail for Replies",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -400,
+                200
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            },
+            "notes": "Checks Gmail every minute for unread emails with 'Meeting Summary' or 'Review Required' in subject"
+        },
+        {
+            "parameters": {
+                "jsCode": "/**\n * PARSE HOST REPLY EMAIL\n * Validates it's a reply to E-Secretary and extracts approval status\n */\n\nconst email = $input.first().json;\n\n// Extract email fields\nconst subject = (email.subject || '').trim();\nconst body = (email.text || email.snippet || email.body || '').trim();\nconst from = email.from?.emailAddress || email.from || '';\nconst threadId = email.threadId || '';\nconst messageId = email.id || '';\n\n// Verify this is an E-Secretary email\nconst subjectLower = subject.toLowerCase();\nif (!subjectLower.includes('meeting summary') && !subjectLower.includes('review required')) {\n    throw new Error('❌ Not an E-Secretary email - skipping');\n}\n\n// Check if email body contains E-Secretary footer (confirms it's our email thread)\nconst bodyLower = body.toLowerCase();\nif (!bodyLower.includes('e-secretary') && !bodyLower.includes('meeting id')) {\n    throw new Error('❌ Not from E-Secretary thread - skipping');\n}\n\n// Parse approval status\nlet status = 'unknown';\nlet changes = '';\nlet hasChanges = false;\n\nif (bodyLower.includes('approved')) {\n    status = 'approved';\n    \n    // Extract changes if present\n    const changePatterns = [\n        /approved\\s*with\\s*changes?:?\\s*([\\s\\S]*?)(?=\\n\\n|$)/i,\n        /changes?:?\\s*([\\s\\S]*?)(?=\\n\\n|$)/i,\n        /approved[\\s\\S]*?:\\s*([\\s\\S]*?)(?=\\n\\n|$)/i\n    ];\n    \n    for (const pattern of changePatterns) {\n        const match = body.match(pattern);\n        if (match && match[1] && match[1].trim().length > 5) {\n            changes = match[1].trim();\n            // Remove email signatures and quoted text\n            changes = changes.split(/\\n>{1,}/)[0]; // Remove quoted replies\n            changes = changes.split(/\\n-{2,}/)[0]; // Remove signatures\n            changes = changes.split(/\\nOn.*wrote:/)[0]; // Remove reply headers\n            changes = changes.trim().slice(0, 2000); // Limit length\n            hasChanges = changes.length > 0;\n            break;\n        }\n    }\n} else if (bodyLower.includes('reject')) {\n    status = 'rejected';\n}\n\n// Validate we found a status\nif (status === 'unknown') {\n    throw new Error('⚠️ Email does not contain APPROVED or REJECT keyword');\n}\n\n// Log for debugging\nconsole.log('✅ Reply detected:', {\n    status: status,\n    hasChanges: hasChanges,\n    from: from,\n    subject: subject.slice(0, 50)\n});\n\n// Return parsed data\nreturn {\n    json: {\n        // Status\n        reply_status: status,\n        has_changes: hasChanges,\n        changes_requested: changes,\n        \n        // Email metadata\n        from_email: from,\n        subject: subject,\n        thread_id: threadId,\n        message_id: messageId,\n        \n        // Original body (for debugging)\n        original_body: body,\n        \n        // Timestamp\n        received_at: new Date().toISOString()\n    }\n};"
+            },
+            "id": "parse-reply",
+            "name": "🔍 Parse & Validate Reply",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -160,
+                200
+            ],
+            "onError": "continueErrorOutput",
+            "notes": "Validates email is from E-Secretary thread and extracts approval status + changes"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "approved",
+                            "leftValue": "={{ $json.reply_status }}",
+                            "rightValue": "approved",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-status",
+            "name": "✅ Approved?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                80,
+                200
+            ],
+            "notes": "Routes to approval processing or rejection handling"
+        },
+        {
+            "parameters": {
+                "messageId": "={{ $json.message_id }}"
+            },
+            "id": "mark-read",
+            "name": "📨 Mark as Read",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                320,
+                100
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            },
+            "notes": "Marks the reply email as read so it won't be processed again"
+        },
+        {
+            "parameters": {},
+            "id": "output-approved",
+            "name": "→ Connect to Your Approval Flow",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                560,
+                100
+            ],
+            "notes": "OUTPUT: Connect this to your Gemini revision + email sending nodes"
+        },
+        {
+            "parameters": {},
+            "id": "output-rejected",
+            "name": "→ Rejection Handler (Optional)",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                320,
+                300
+            ],
+            "notes": "OUTPUT: Connect this to your rejection notification (if needed)"
+        }
+    ],
+    "connections": {
+        "📧 Poll Gmail for Replies": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Parse & Validate Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Parse & Validate Reply": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Approved?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "✅ Approved?": {
+            "main": [
+                [
+                    {
+                        "node": "📨 Mark as Read",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "→ Rejection Handler (Optional)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📨 Mark as Read": {
+            "main": [
+                [
+                    {
+                        "node": "→ Connect to Your Approval Flow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": [],
+    "pinData": {}
+}

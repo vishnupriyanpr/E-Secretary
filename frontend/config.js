@@ -19,7 +19,10 @@ const CONFIG = {
         : 'https://e-secretary-beta.onrender.com',  // n8n deployed on Render
 
     // Refresh interval for dashboard
-    REFRESH_INTERVAL: 30000
+    REFRESH_INTERVAL: 30000,
+
+    // Google OAuth Client ID
+    GOOGLE_CLIENT_ID: '129719555080-vho34sa575kthki0p959cqmqe9o11td9.apps.googleusercontent.com'
 };
 
 // Make it available globally

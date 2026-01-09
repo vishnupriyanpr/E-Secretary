@@ -1,0 +1,374 @@
+{
+    "name": "E-Secretary: Reply Handler",
+    "nodes": [
+        {
+            "parameters": {
+                "pollTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinute"
+                        }
+                    ]
+                },
+                "simple": false,
+                "filters": {
+                    "q": "subject:(Meeting Summary) is:unread newer_than:1h"
+                }
+            },
+            "id": "gmail-trigger",
+            "name": "1. Check for Replies",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -800,
+                200
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const email = $input.first().json;\n\nconst subject = email.subject || '';\nconst body = email.text || email.snippet || email.body || '';\nconst from = email.from?.emailAddress || email.from || '';\nconst threadId = email.threadId || '';\nconst messageId = email.id || '';\n\n// Check if this is a reply to E-Secretary email\nif (!subject.toLowerCase().includes('meeting summary')) {\n  throw new Error('Not an E-Secretary reply');\n}\n\n// Parse the reply\nconst bodyLower = body.toLowerCase();\nlet status = 'unknown';\nlet suggestions = '';\n\nif (bodyLower.includes('approved')) {\n  status = 'approved';\n  \n  // Extract changes if any\n  const match = body.match(/(?:approved\\s*(?:with)?\\s*changes?:?|changes?:)\\s*([\\s\\S]*)/i);\n  if (match && match[1]) {\n    suggestions = match[1].trim().slice(0, 2000);\n  }\n} else if (bodyLower.includes('reject')) {\n  status = 'rejected';\n}\n\nif (status === 'unknown') {\n  throw new Error('Reply does not contain APPROVED or REJECT');\n}\n\n// Extract meeting ID from original email if possible\nlet meetingId = '';\nconst idMatch = body.match(/meeting\\s*id:?\\s*([a-z0-9-_]+)/i);\nif (idMatch) meetingId = idMatch[1];\n\nconsole.log('Reply status:', status, '| Suggestions:', suggestions ? 'Yes' : 'No');\n\nreturn {\n  json: {\n    status: status,\n    suggestions: suggestions,\n    has_changes: suggestions.length > 0,\n    from_email: from,\n    meeting_id: meetingId,\n    thread_id: threadId,\n    message_id: messageId,\n    original_subject: subject\n  }\n};"
+            },
+            "id": "parse-reply",
+            "name": "2. Parse Reply",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -560,
+                200
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "approved",
+                            "leftValue": "={{ $json.status }}",
+                            "rightValue": "approved",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-approved",
+            "name": "3. Approved?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -320,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "has-changes",
+                            "leftValue": "={{ $json.has_changes }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-changes",
+            "name": "4. Has Changes?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -80,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "googlePalmApi",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"contents\": [{\"parts\": [{\"text\": \"The host has requested changes to the meeting summary. Please update the summary based on their feedback.\\n\\nHOST FEEDBACK:\\n{{ $json.suggestions }}\\n\\nPlease provide an updated professional meeting summary that incorporates these changes. Use the same format with Executive Summary, Action Items, Key Decisions, and Follow-up sections.\"}]}],\n  \"generationConfig\": {\"temperature\": 0.2, \"maxOutputTokens\": 2048}\n}",
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "gemini-revise",
+            "name": "5. Revise Summary",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                160,
+                0
+            ],
+            "retryOnFail": true,
+            "maxTries": 2,
+            "waitBetweenTries": 3000,
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "googlePalmApi",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const reply = $('2. Parse Reply').first().json;\nconst revised = $input.first().json;\n\nlet summary = '';\nif (revised.candidates?.[0]?.content?.parts?.[0]?.text) {\n  summary = revised.candidates[0].content.parts[0].text.trim();\n} else {\n  summary = 'Summary revision failed. Original summary will be used.';\n}\n\n// Create beautifully formatted email\nconst emailHtml = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>*{box-sizing:border-box}body{margin:0;padding:20px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}.card{max-width:680px;margin:0 auto;border-radius:24px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5)}.header{background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:36px 40px}.header h1{color:white;margin:0 0 8px;font-size:26px;font-weight:700}.header p{color:rgba(255,255,255,0.9);margin:0;font-size:15px}.badge{display:inline-block;background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:20px;font-size:12px;color:white;margin-top:12px}.content{background:white;padding:36px 40px}.summary-box{background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border:1px solid #6ee7b7;border-radius:16px;padding:28px}.summary-title{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:#047857;margin:0 0 20px}.summary-content{font-size:14px;line-height:1.8;color:#334155}.summary-content h4{color:#0f172a;margin:20px 0 12px;font-size:15px;font-weight:700}.footer{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);padding:24px 40px;text-align:center}.footer p{color:#64748b;margin:0;font-size:12px}.footer .brand{color:#10b981;font-weight:600}</style></head><body><div class=\"card\"><div class=\"header\"><h1>✅ Approved Meeting Summary</h1><p>This summary has been reviewed and approved by the meeting host</p><span class=\"badge\">📋 Final Version</span></div><div class=\"content\"><div class=\"summary-box\"><h3 class=\"summary-title\">📝 Meeting Summary</h3><div class=\"summary-content\">${summary.replace(/\\n/g,'<br>').replace(/## (.*?)(<br>|$)/g,'<h4>$1</h4>').replace(/\\*\\*(.*?)\\*\\*/g,'<strong>$1</strong>').replace(/- \\[ \\]/g,'☐').replace(/- \\[x\\]/g,'☑')}</div></div></div><div class=\"footer\"><p>Approved by <strong>${reply.from_email}</strong> | Powered by <span class=\"brand\">E-Secretary</span></p></div></div></body></html>`;\n\nreturn {\n  json: {\n    host_email: reply.from_email,\n    summary: summary,\n    email_subject: '✅ Approved: Meeting Summary',\n    email_body: emailHtml,\n    thread_id: reply.thread_id\n  }\n};"
+            },
+            "id": "format-final",
+            "name": "6. Format Final Email",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.host_email }}",
+                "subject": "={{ $json.email_subject }}",
+                "message": "={{ $json.email_body }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "send-to-host",
+            "name": "7. Send Updated to Host",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                640,
+                0
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sendTo": "=priyanv780@gmail.com",
+                "subject": "={{ $json.email_subject }}",
+                "message": "={{ $json.email_body }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "send-to-attendees",
+            "name": "8. Send to Attendees",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                640,
+                200
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "messageId": "={{ $('2. Parse Reply').first().json.message_id }}"
+            },
+            "id": "mark-read",
+            "name": "9. Mark as Read",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                880,
+                100
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "end-rejected",
+            "name": "❌ Rejected",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                -80,
+                300
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "end-complete",
+            "name": "✅ Complete",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                100
+            ]
+        }
+    ],
+    "connections": {
+        "1. Check for Replies": {
+            "main": [
+                [
+                    {
+                        "node": "2. Parse Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "2. Parse Reply": {
+            "main": [
+                [
+                    {
+                        "node": "3. Approved?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "3. Approved?": {
+            "main": [
+                [
+                    {
+                        "node": "4. Has Changes?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "❌ Rejected",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "4. Has Changes?": {
+            "main": [
+                [
+                    {
+                        "node": "5. Revise Summary",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "6. Format Final Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "5. Revise Summary": {
+            "main": [
+                [
+                    {
+                        "node": "6. Format Final Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "6. Format Final Email": {
+            "main": [
+                [
+                    {
+                        "node": "7. Send Updated to Host",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "8. Send to Attendees",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "7. Send Updated to Host": {
+            "main": [
+                [
+                    {
+                        "node": "9. Mark as Read",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "8. Send to Attendees": {
+            "main": [
+                [
+                    {
+                        "node": "9. Mark as Read",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "9. Mark as Read": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Complete",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": []
+}

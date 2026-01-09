@@ -1,0 +1,28 @@
+{
+    "parameters": {
+        "pollTimes": {
+            "item": [
+                {
+                    "mode": "everyMinute"
+                }
+            ]
+        },
+        "filters": {
+            "q": "subject:(Meeting Summary) is:unread"
+        }
+    },
+    "id": "read-reply",
+    "name": "Read Reply",
+    "type": "n8n-nodes-base.gmailTrigger",
+    "typeVersion": 1.2,
+    "position": [
+        0,
+        0
+    ],
+    "credentials": {
+        "gmailOAuth2": {
+            "id": "yn0da0X8KKRoG8H7",
+            "name": "Gmail account"
+        }
+    }
+}

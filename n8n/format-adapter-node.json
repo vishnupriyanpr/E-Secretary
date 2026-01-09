@@ -1,0 +1,13 @@
+{
+    "parameters": {
+        "jsCode": "// Simple adapter: Gmail Trigger → Process Reply format\nconst email = $input.first().json;\n\nreturn {\n    json: {\n        text: email.text || email.snippet || '',\n        body: email.text || email.snippet || '',\n        from: email.from?.emailAddress || email.from,\n        subject: email.subject,\n        message_id: email.id,\n        thread_id: email.threadId\n    }\n};"
+    },
+    "id": "format-gmail-data",
+    "name": "Format for Process Reply",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+        240,
+        0
+    ]
+}

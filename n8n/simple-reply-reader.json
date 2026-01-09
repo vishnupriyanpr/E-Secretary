@@ -1,0 +1,62 @@
+{
+    "name": "Simple Reply Reader",
+    "nodes": [
+        {
+            "parameters": {
+                "pollTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinute"
+                        }
+                    ]
+                },
+                "filters": {
+                    "q": "subject:(Meeting Summary) is:unread"
+                }
+            },
+            "id": "read-reply",
+            "name": "Read Gmail Reply",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                240,
+                300
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "next-step",
+            "name": "→ Connect Your Flow Here",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Read Gmail Reply": {
+            "main": [
+                [
+                    {
+                        "node": "→ Connect Your Flow Here",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": []
+}

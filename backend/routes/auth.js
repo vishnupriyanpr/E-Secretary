@@ -7,6 +7,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+// fetch is native in Node 18+
 const { query, getOne, getMany } = require('../db');
 
 const router = express.Router();
@@ -107,6 +108,149 @@ router.post('/register', async (req, res) => {
     }
 });
 
+
+
+/**
+ * POST /api/auth/google
+ * Authenticate with Google (Sign-In / Sign-Up)
+ */
+router.post('/google', async (req, res) => {
+    try {
+        const { token, mode } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ success: false, error: 'Token required' });
+        }
+
+        // 1. Verify token with Google
+        const googleResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+        const googleData = await googleResponse.json();
+
+        if (googleData.error || !googleData.email) {
+            console.error('Google verification failed:', googleData);
+            return res.status(401).json({ success: false, error: 'Invalid Google token' });
+        }
+
+        const { email, name, sub: googleId, picture } = googleData;
+
+        // 2. Check if user exists
+        let user = await getOne(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+            [email]
+        );
+
+        // --- STRICT LOGIN MODE CHECK ---
+        if (!user && mode === 'login') {
+            return res.status(404).json({
+                success: false,
+                error: 'No account found with this email. Please sign up first.'
+            });
+        }
+        // -------------------------------
+
+        if (!user) {
+            // 3. Create new user if not exists (only if NOT in strict login mode)
+            // Generate a random password for Google users (they won't use it)
+            const randomPassword = crypto.randomBytes(32).toString('hex');
+            const password_hash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
+
+            const result = await query(`
+                INSERT INTO users (email, name, password_hash, google_id, profile_picture, email_verified)
+                VALUES (LOWER($1), $2, $3, $4, $5, TRUE)
+                RETURNING id, email, name, profile_picture, created_at
+            `, [email, name, password_hash, googleId, picture]);
+
+            user = result.rows[0];
+            user.email_verified = true;
+            console.log(`Created new Google user: ${email}`);
+        } else {
+            // Update Google ID and mark email as verified (Google verifies emails)
+            await query(`
+                UPDATE users 
+                SET google_id = COALESCE(google_id, $1), 
+                    profile_picture = COALESCE($2, profile_picture),
+                    email_verified = TRUE,
+                    last_login = CURRENT_TIMESTAMP 
+                WHERE id = $3
+            `, [googleId, picture, user.id]);
+        }
+
+        // 4. Generate JWT & Session
+        const jwtToken = jwt.sign(
+            { id: user.id, email: user.email, name: user.name },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        await createSession(user.id, jwtToken, req);
+
+        res.json({
+            success: true,
+            message: 'Google login successful',
+            token: jwtToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                profile_picture: user.profile_picture
+            }
+        });
+
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(500).json({ success: false, error: 'Server error during Google auth' });
+    }
+});
+
+/**
+ * GET /api/auth/google/callback
+ * OAuth2 callback handler for Google Calendar integration
+ */
+router.get('/google/callback', async (req, res) => {
+    try {
+        const { code, state: userId } = req.query;
+
+        if (!code || !userId) {
+            return res.redirect('/dashboard.html?error=missing_params');
+        }
+
+        // Import googleapis
+        const { google } = require('googleapis');
+
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3001/api/auth/google/callback'
+        );
+
+        // Exchange authorization code for tokens
+        const { tokens } = await oauth2Client.getToken(code);
+
+        // Store tokens in database
+        await query(`
+            UPDATE users 
+            SET google_access_token = $1, 
+                google_refresh_token = COALESCE($2, google_refresh_token),
+                token_expires_at = $3
+            WHERE id = $4
+        `, [
+            tokens.access_token,
+            tokens.refresh_token,
+            tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+            userId
+        ]);
+
+        console.log(`Calendar connected for user: ${userId}`);
+
+        // Redirect back to dashboard with success
+        res.redirect('/dashboard.html?calendar=connected');
+
+    } catch (error) {
+        console.error('OAuth Callback Error:', error);
+        res.redirect('/dashboard.html?error=oauth_failed');
+    }
+});
+
 /**
  * POST /api/auth/login
  * Authenticate user and return JWT
@@ -172,7 +316,8 @@ router.post('/login', async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                name: user.name
+                name: user.name,
+                profile_picture: user.profile_picture
             }
         });
 
@@ -207,7 +352,7 @@ router.get('/verify', async (req, res) => {
 
         // Verify user still exists in database
         const user = await getOne(
-            'SELECT id, email, name FROM users WHERE id = $1',
+            'SELECT id, email, name, profile_picture FROM users WHERE id = $1',
             [decoded.id]
         );
 
@@ -225,7 +370,8 @@ router.get('/verify', async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                name: user.name
+                name: user.name,
+                profile_picture: user.profile_picture
             }
         });
     } catch (error) {

@@ -1,0 +1,30 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.groq.com/openai/v1/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"llama3-70b-8192\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an AI assistant analyzing Slack messages. Return ONLY valid JSON found in the prompt instructions.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze these team chat messages.\\n\\n=== MESSAGES ===\\n\" + $('1. Fetch Slack Messages').first().json.raw_messages + \"\\n=== END ===\\n\\nAnalyze the conversation and return a JSON object with:\\n1. \\\"executive_summary\\\": 3-4 sentence summary\\n2. \\\"key_discussions\\\": Array of topics (e.g. \\\"Server performance\\\")\\n3. \\\"action_items\\\": Array of tasks with owners\\n4. \\\"urgent_matters\\\": Array of critical issues\\n5. \\\"decisions_made\\\": Array of decisions\\n6. \\\"mentions_and_requests\\\": Array of mentions\\n7. \\\"urgency_score\\\": Number 1-10 (8+ is urgent)\\n8. \\\"call_script\\\": A natural spoken message (30s) summarizing urgent matters for a call.\\n\\nReturn ONLY valid JSON.\"\n    }\n  ],\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+                "options": {}
+            },
+            "id": "groq-analysis",
+            "name": "3. Groq Analysis",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1120,
+                400
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "groq_api_key",
+                    "name": "Groq API Key"
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,309 @@
+{
+    "name": "E-Secretary Final",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "fireflies-transcript",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                -800,
+                0
+            ],
+            "webhookId": "fireflies-transcript"
+        },
+        {
+            "parameters": {},
+            "id": "manual",
+            "name": "Manual Test",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                -800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.fireflies.ai/graphql",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "{\"query\": \"query { transcripts(limit: 1) { id title date duration organizer_email participants meeting_attendees { displayName email } sentences { speaker_name text } } }\"}",
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "fireflies",
+            "name": "Fireflies API",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -560,
+                200
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "AiWJvUpLbYADyKsi",
+                    "name": "Header Auth account 2"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "const raw = $input.first().json;\nif (raw.errors) throw new Error('Fireflies: ' + raw.errors[0]?.message);\nconst t = raw.data?.transcripts?.[0];\nif (!t) throw new Error('No transcripts found');\n\nlet host = t.organizer_email;\nif (!host && t.meeting_attendees?.[0]) host = t.meeting_attendees[0].email;\nif (!host && t.participants?.[0]) host = typeof t.participants[0] === 'string' ? t.participants[0] : null;\nif (!host) throw new Error('No host email');\n\nconst att = (t.meeting_attendees || []).map(a => ({email: a.email, name: a.displayName || ''})).filter(a => a.email);\n\nlet txt = '';\nif (t.sentences) txt = t.sentences.map(s => s.speaker_name + ': ' + s.text).join(' ');\nelse if (typeof t.transcript === 'string') txt = t.transcript;\nif (txt.length < 20) throw new Error('Transcript too short');\n\ntxt = txt.replace(/\\\\/g, '').replace(/\"/g, \"'\").replace(/[\\n\\r\\t]/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 40000);\n\nreturn {json: {id: t.id, title: t.title || 'Meeting', host_email: host, attendees: att, transcript: txt, duration: t.duration || 0, date: t.date}};"
+            },
+            "id": "transform",
+            "name": "Transform",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -320,
+                100
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpQueryAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\"contents\":[{\"parts\":[{\"text\":\"Summarize this meeting in 200 words. Use bullets. Include action items with owners. Meeting: {{ $json.title }}. Transcript: {{ $json.transcript }}\"}]}],\"generationConfig\":{\"temperature\":0.2,\"maxOutputTokens\":1000}}",
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "gemini",
+            "name": "Gemini",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -80,
+                100
+            ],
+            "retryOnFail": true,
+            "maxTries": 2,
+            "waitBetweenTries": 5000,
+            "credentials": {
+                "httpQueryAuth": {
+                    "id": "IDf5fMpMGqJjuhvx",
+                    "name": "Query Auth account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "const g = $input.first().json;\nconst m = $('Transform').first().json;\nlet sum = g.candidates?.[0]?.content?.parts?.[0]?.text || 'Summary failed';\nsum = sum.replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst d = new Date(m.date).toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});\nconst html = '<div style=\"font-family:Arial;max-width:600px;margin:auto\"><div style=\"background:linear-gradient(135deg,#3b82f6,#06b6d4);padding:20px;border-radius:10px 10px 0 0\"><h2 style=\"color:white;margin:0\">Meeting Summary</h2></div><div style=\"background:#fff;padding:20px;border:1px solid #ddd\"><h3 style=\"margin:0 0 10px\">' + m.title + '</h3><p style=\"color:#666;font-size:13px\">Date: ' + d + ' | Duration: ' + m.duration + ' min</p><div style=\"background:#f5f5f5;padding:15px;border-radius:5px;white-space:pre-wrap\">' + sum.replace(/\\n/g,'<br>') + '</div><p style=\"margin-top:15px;padding:10px;background:#fff3cd;border-radius:5px;font-size:12px\"><b>Reply APPROVED</b> to send to attendees or <b>REJECT</b></p></div><div style=\"background:#333;padding:10px;border-radius:0 0 10px 10px;text-align:center\"><span style=\"color:#888;font-size:10px\">E-Secretary | ' + m.id + '</span></div></div>';\nreturn {json: {meeting_id: m.id, title: m.title, host_email: m.host_email, attendees: m.attendees, summary: sum, subject: 'Meeting Summary: ' + m.title.slice(0,40), body: html}};"
+            },
+            "id": "format",
+            "name": "Format",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                160,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.host_email }}",
+                "subject": "={{ $json.subject }}",
+                "message": "={{ $json.body }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "gmail",
+            "name": "Gmail",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                400,
+                100
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({success: true, meeting: $('Transform').first().json.id, host: $json.host_email}) }}",
+                "options": {}
+            },
+            "id": "ok",
+            "name": "OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                640,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({success: false, error: $input.first().json.message || 'Error'}) }}",
+                "options": {
+                    "responseCode": 400
+                }
+            },
+            "id": "err",
+            "name": "Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                160,
+                300
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "done",
+            "name": "Done",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                640,
+                200
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Transform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Manual Test": {
+            "main": [
+                [
+                    {
+                        "node": "Fireflies API",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fireflies API": {
+            "main": [
+                [
+                    {
+                        "node": "Transform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transform": {
+            "main": [
+                [
+                    {
+                        "node": "Gemini",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gemini": {
+            "main": [
+                [
+                    {
+                        "node": "Format",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gmail": {
+            "main": [
+                [
+                    {
+                        "node": "OK",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Done",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": []
+}

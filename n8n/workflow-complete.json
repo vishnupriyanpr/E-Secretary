@@ -1,0 +1,662 @@
+{
+    "name": "E-Secretary: Complete Workflow (Single File)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "fireflies-transcript",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "→ Fireflies Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                -1000,
+                100
+            ],
+            "webhookId": "fireflies-transcript"
+        },
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "→ Manual Test",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                -1000,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "pollTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinute"
+                        }
+                    ]
+                },
+                "simple": false,
+                "filters": {
+                    "q": "subject:(Meeting Summary) is:unread newer_than:2h"
+                }
+            },
+            "id": "gmail-trigger",
+            "name": "→ Gmail Replies (Auto)",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -1000,
+                400
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.fireflies.ai/graphql",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "{\"query\": \"query { transcripts(limit: 1) { id title date duration organizer_email participants meeting_attendees { displayName email } sentences { speaker_name text } } }\"}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "fetch-fireflies",
+            "name": "Fetch Meeting",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -720,
+                150
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "AiWJvUpLbYADyKsi",
+                    "name": "Header Auth account 2"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "const raw = $input.first().json;\nlet data = raw.data?.transcripts?.[0] || raw;\n\nconst meeting = {\n  id: data.id || 'meet_' + Date.now(),\n  title: (data.title || 'Untitled').slice(0, 200),\n  host_email: data.organizer_email || (data.meeting_attendees?.[0]?.email) || null,\n  attendees: [],\n  transcript: '',\n  duration: parseInt(data.duration) || 0,\n  date: data.date || new Date().toISOString()\n};\n\nif (!meeting.host_email) throw new Error('No host email');\n\nconst att = data.meeting_attendees || data.participants || [];\nmeeting.attendees = att.slice(0, 50).map(a => ({email: a.email || a, name: a.displayName || ''})).filter(a => a.email?.includes('@'));\n\nlet text = '';\nif (data.sentences?.length) {\n  text = data.sentences.map(s => (s.speaker_name || 'Speaker') + ': ' + s.text).join(' ');\n}\nif (text.length < 50) throw new Error('Transcript too short');\n\ntext = text.replace(/\\\\/g, '').replace(/\"/g, \"'\").replace(/[\\n\\r\\t]/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 50000);\n\nmeeting.transcript = text;\nreturn { json: meeting };"
+            },
+            "id": "transform-data",
+            "name": "Transform",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -480,
+                150
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "googlePalmApi",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\"contents\":[{\"parts\":[{\"text\":\"Analyze this meeting and create a professional summary.\\n\\nFORMAT:\\n## Executive Summary\\n[Key points]\\n## Action Items\\n- [ ] Task - Owner\\n## Key Decisions\\n- Decision\\n## Follow-up\\n- Items\\n\\nMeeting: {{ $json.title }}\\nDuration: {{ $json.duration }} min\\nTranscript: {{ $json.transcript }}\"}]}],\"generationConfig\":{\"temperature\":0.2,\"maxOutputTokens\":2048}}",
+                "options": {
+                    "timeout": 120000
+                }
+            },
+            "id": "gemini-summarize",
+            "name": "Gemini Summarize",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -240,
+                150
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 3000,
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "googlePalmApi",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "const g = $input.first().json;\nconst m = $('Transform').first().json;\nlet sum = g.candidates?.[0]?.content?.parts?.[0]?.text || 'Summary failed';\nconst d = new Date(m.date).toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});\nconst att = m.attendees.map(a => a.name ? a.name + ' (' + a.email + ')' : a.email).join(', ');\nconst html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>*{box-sizing:border-box}body{margin:0;padding:20px;background:linear-gradient(135deg,#0f172a,#1e293b);font-family:-apple-system,sans-serif}.card{max-width:680px;margin:0 auto;border-radius:24px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}.header{background:linear-gradient(135deg,#3b82f6,#8b5cf6,#06b6d4);padding:36px 40px;position:relative}.header h1{color:white;margin:0 0 8px;font-size:26px;font-weight:700}.header p{color:rgba(255,255,255,.9);margin:0;font-size:15px}.badge{display:inline-block;background:rgba(255,255,255,.2);padding:6px 14px;border-radius:20px;font-size:12px;color:white;margin-top:12px}.content{background:white;padding:36px 40px}.title{color:#0f172a;font-size:22px;font-weight:700;margin:0 0 24px;border-bottom:2px solid #e2e8f0;padding-bottom:16px}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}.meta-item{background:linear-gradient(135deg,#f8fafc,#f1f5f9);padding:16px;border-radius:12px;text-align:center}.meta-icon{font-size:24px}.meta-label{font-size:11px;color:#64748b;text-transform:uppercase}.meta-value{font-size:14px;color:#1e293b;font-weight:600;margin-top:4px}.summary-box{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:16px;padding:28px;margin:24px 0}.summary-title{font-size:16px;font-weight:700;color:#0369a1;margin:0 0 20px}.summary-content{font-size:14px;line-height:1.8;color:#334155}.summary-content h4{color:#0f172a;margin:20px 0 12px;font-weight:700}.approval{background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:16px;padding:28px;margin-top:28px}.approval h4{color:#92400e;margin:0 0 16px;font-weight:700}.approval-opts{display:grid;gap:12px}.approval-opt{background:white;padding:14px 18px;border-radius:10px;display:flex;align-items:center;gap:12px}.approval-opt code{background:#fef3c7;padding:4px 10px;border-radius:6px;font-weight:600;color:#92400e}.approval-opt span{color:#78350f;font-size:13px}.footer{background:linear-gradient(135deg,#1e293b,#0f172a);padding:24px;text-align:center}.footer p{color:#64748b;margin:0;font-size:12px}</style></head><body><div class=\"card\"><div class=\"header\"><h1>📋 Meeting Summary</h1><p>Review Required</p><span class=\"badge\">🔔 Action Needed</span></div><div class=\"content\"><h2 class=\"title\">${m.title}</h2><div class=\"meta\"><div class=\"meta-item\"><div class=\"meta-icon\">📅</div><div class=\"meta-label\">Date</div><div class=\"meta-value\">${d}</div></div><div class=\"meta-item\"><div class=\"meta-icon\">⏱️</div><div class=\"meta-label\">Duration</div><div class=\"meta-value\">${m.duration} min</div></div><div class=\"meta-item\"><div class=\"meta-icon\">👥</div><div class=\"meta-label\">Attendees</div><div class=\"meta-value\">${m.attendees.length}</div></div></div><p style=\"font-size:13px;color:#64748b;margin:20px 0\"><strong>Participants:</strong> ${att}</p><div class=\"summary-box\"><h3 class=\"summary-title\">🤖 AI Summary</h3><div class=\"summary-content\">${sum.replace(/\\n/g,'<br>').replace(/##\\s*(.*?)(<br>|$)/g,'<h4>$1</h4>').replace(/\\*\\*(.*?)\\*\\*/g,'<strong>$1</strong>').replace(/-\\s*\\[\\s*\\]/g,'☐').replace(/-\\s*\\[x\\]/g,'☑')}</div></div><div class=\"approval\"><h4>✅ How to Approve</h4><div class=\"approval-opts\"><div class=\"approval-opt\"><code>APPROVED</code><span>Send to all attendees</span></div><div class=\"approval-opt\"><code>APPROVED WITH CHANGES:</code><span>+ your edits</span></div><div class=\"approval-opt\"><code>REJECT</code><span>Discard</span></div></div></div></div><div class=\"footer\"><p>ID: ${m.id} | E-Secretary</p></div></div></body></html>`;\nreturn {json: {meeting_id: m.id, meeting_title: m.title, host_email: m.host_email, attendees: m.attendees, date: m.date, duration: m.duration, original_summary: sum, email_subject: '[Review] Meeting: ' + m.title.slice(0,45), email_body: html}};"
+            },
+            "id": "format-email",
+            "name": "Format Email",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                150
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.host_email }}",
+                "subject": "={{ $json.email_subject }}",
+                "message": "={{ $json.email_body }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "send-host",
+            "name": "Send to Host",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                240,
+                150
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({success: true, meeting: $('Transform').first().json.id, status: 'sent_to_host'}) }}"
+            },
+            "id": "respond-ok",
+            "name": "✅ OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                480,
+                100
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "end-sent",
+            "name": "✅ Sent",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                480,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const email = $input.first().json;\nconst body = (email.text || email.snippet || email.body || '').trim();\nconst from = email.from?.emailAddress || email.from || '';\nconst subject = email.subject || '';\n\nif (!subject.toLowerCase().includes('meeting')) throw new Error('Not E-Secretary');\n\nconst bl = body.toLowerCase();\nlet status = 'unknown';\nlet suggestions = '';\n\nif (bl.includes('approved')) {\n  status = 'approved';\n  const m = body.match(/(?:approved\\s*(?:with)?\\s*changes?:?|changes?:)\\s*([\\s\\S]*)/i);\n  if (m?.[1]) suggestions = m[1].trim().slice(0, 2000);\n} else if (bl.includes('reject')) {\n  status = 'rejected';\n}\n\nif (status === 'unknown') throw new Error('No APPROVED/REJECT');\n\nreturn {json: {reply_status: status, suggestions: suggestions, has_changes: suggestions.length > 0, from_email: from, message_id: email.id}};"
+            },
+            "id": "parse-reply",
+            "name": "Parse Reply",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -720,
+                400
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.reply_status }}",
+                            "rightValue": "approved",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ]
+                }
+            },
+            "id": "check-approved",
+            "name": "Approved?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -480,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.has_changes }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ]
+                }
+            },
+            "id": "check-changes",
+            "name": "Has Changes?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "googlePalmApi",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\"contents\":[{\"parts\":[{\"text\":\"Update the meeting summary with these changes:\\n\\nCHANGES REQUESTED:\\n{{ $json.suggestions }}\\n\\nProvide an updated professional summary with the same structure.\"}]}],\"generationConfig\":{\"temperature\":0.2,\"maxOutputTokens\":2048}}",
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "gemini-revise",
+            "name": "Revise",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                0,
+                200
+            ],
+            "retryOnFail": true,
+            "maxTries": 2,
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "googlePalmApi",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const reply = $('Parse Reply').first().json;\nconst revised = $input.first().json;\n\nlet sum = revised.candidates?.[0]?.content?.parts?.[0]?.text || 'Revision failed';\n\nconst html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>*{box-sizing:border-box}body{margin:0;padding:20px;background:linear-gradient(135deg,#0f172a,#1e293b);font-family:-apple-system,sans-serif}.card{max-width:680px;margin:0 auto;border-radius:24px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}.header{background:linear-gradient(135deg,#10b981,#059669);padding:36px 40px}.header h1{color:white;margin:0 0 8px;font-size:26px;font-weight:700}.header p{color:rgba(255,255,255,.9);margin:0;font-size:15px}.badge{display:inline-block;background:rgba(255,255,255,.2);padding:6px 14px;border-radius:20px;font-size:12px;color:white;margin-top:12px}.content{background:white;padding:36px 40px}.summary-box{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7;border-radius:16px;padding:28px}.summary-title{font-size:16px;font-weight:700;color:#047857;margin:0 0 20px}.summary-content{font-size:14px;line-height:1.8;color:#334155}.summary-content h4{color:#0f172a;margin:20px 0 12px;font-weight:700}.footer{background:linear-gradient(135deg,#1e293b,#0f172a);padding:24px;text-align:center}.footer p{color:#64748b;margin:0;font-size:12px}</style></head><body><div class=\"card\"><div class=\"header\"><h1>✅ Approved Summary</h1><p>Reviewed and approved</p><span class=\"badge\">📋 Final</span></div><div class=\"content\"><div class=\"summary-box\"><h3 class=\"summary-title\">📝 Meeting Summary</h3><div class=\"summary-content\">${sum.replace(/\\n/g,'<br>').replace(/##\\s*(.*?)(<br>|$)/g,'<h4>$1</h4>').replace(/\\*\\*(.*?)\\*\\*/g,'<strong>$1</strong>').replace(/-\\s*\\[\\s*\\]/g,'☐').replace(/-\\s*\\[x\\]/g,'☑')}</div></div></div><div class=\"footer\"><p>Approved by ${reply.from_email} | E-Secretary</p></div></div></body></html>`;\n\nreturn {json: {host_email: reply.from_email, summary: sum, subject: '✅ Approved: Meeting Summary', body: html}};"
+            },
+            "id": "format-final",
+            "name": "Format Final",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.host_email }}",
+                "subject": "={{ $json.subject }}",
+                "message": "={{ $json.body }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "send-host-final",
+            "name": "Send to Host",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                480,
+                250
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sendTo": "=priyanv780@gmail.com",
+                "subject": "={{ $json.subject }}",
+                "message": "={{ $json.body }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "send-attendees",
+            "name": "Send to Attendees",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                480,
+                350
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "messageId": "={{ $('Parse Reply').first().json.message_id }}"
+            },
+            "id": "mark-read",
+            "name": "Mark Read",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                720,
+                300
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "end-rejected",
+            "name": "❌ Rejected",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                -240,
+                500
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "end-complete",
+            "name": "✅ Complete",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                960,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({success: false, error: $input.first().json.message || 'Error'}) }}",
+                "options": {
+                    "responseCode": 400
+                }
+            },
+            "id": "error-response",
+            "name": "Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                -240,
+                600
+            ]
+        }
+    ],
+    "connections": {
+        "→ Fireflies Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Transform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "→ Manual Test": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Meeting",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "→ Gmail Replies (Auto)": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Meeting": {
+            "main": [
+                [
+                    {
+                        "node": "Transform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transform": {
+            "main": [
+                [
+                    {
+                        "node": "Gemini Summarize",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gemini Summarize": {
+            "main": [
+                [
+                    {
+                        "node": "Format Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Email": {
+            "main": [
+                [
+                    {
+                        "node": "Send to Host",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send to Host": {
+            "main": [
+                [
+                    {
+                        "node": "✅ OK",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "✅ Sent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Reply": {
+            "main": [
+                [
+                    {
+                        "node": "Approved?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Approved?": {
+            "main": [
+                [
+                    {
+                        "node": "Has Changes?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "❌ Rejected",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Has Changes?": {
+            "main": [
+                [
+                    {
+                        "node": "Revise",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Format Final",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Revise": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Final": {
+            "main": [
+                [
+                    {
+                        "node": "Send to Host",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Send to Attendees",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send to Host": {
+            "main": [
+                [
+                    {
+                        "node": "Mark Read",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send to Attendees": {
+            "main": [
+                [
+                    {
+                        "node": "Mark Read",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mark Read": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Complete",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": []
+}

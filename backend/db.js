@@ -40,6 +40,8 @@ async function initializeDatabase() {
                 email VARCHAR(255) UNIQUE NOT NULL,
                 name VARCHAR(255) NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
+                google_id VARCHAR(255) UNIQUE,
+                profile_picture TEXT,
                 email_verified BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -79,13 +81,72 @@ async function initializeDatabase() {
             );
         `);
 
-        // Create index for faster lookups
-        await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-            CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
-            CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
-            CREATE INDEX IF NOT EXISTS idx_meetings_user ON meetings(user_id);
-        `);
+        // Create indexes for faster lookups (run separately to avoid batch failures)
+        const indexes = [
+            'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+            'CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)',
+            'CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)',
+            'CREATE INDEX IF NOT EXISTS idx_meetings_user ON meetings(user_id)'
+        ];
+
+        for (const indexQuery of indexes) {
+            try {
+                await client.query(indexQuery);
+            } catch (indexError) {
+                // Index might already exist or column might not exist yet - not fatal
+                console.log('Index creation skipped:', indexError.message);
+            }
+        }
+
+        // --- MIGRATION: Add missing columns for Google Auth if they don't exist ---
+        try {
+            console.log('Verifying users table schema...');
+
+            // Add google_id
+            await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE');
+            console.log('✓ Verified google_id column');
+
+            // Add profile_picture
+            await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture TEXT');
+            console.log('✓ Verified profile_picture column');
+
+            // Add Google OAuth tokens for Calendar API
+            await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS google_refresh_token TEXT');
+            await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS google_access_token TEXT');
+            await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMP WITH TIME ZONE');
+            console.log('✓ Verified Google OAuth token columns');
+
+        } catch (migrationError) {
+            console.error('Migration warning (non-fatal):', migrationError.message);
+        }
+        // --------------------------------------------------------------------------
+
+        // --- MIGRATION: Add all required columns to meetings table ---
+        try {
+            console.log('Verifying meetings table schema...');
+
+            // Core columns
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS title VARCHAR(500)');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS meeting_date TIMESTAMP WITH TIME ZONE');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS transcript TEXT');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS summary TEXT');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS action_items JSONB');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT \'pending\'');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS host_email VARCHAR(255)');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS attendees JSONB');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP');
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP');
+
+            // Google Calendar integration
+            await client.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS google_event_id VARCHAR(255)');
+
+            console.log('✓ Verified all meetings table columns');
+        } catch (meetingsMigrationError) {
+            console.error('Meetings migration warning (non-fatal):', meetingsMigrationError.message);
+        }
+        // -------------------------------------------------------------------
 
         console.log('✓ Database tables initialized');
 

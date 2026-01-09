@@ -1,0 +1,272 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "jsCode": "// Store the email thread ID and timestamp for polling\nconst sentEmail = $input.first().json;\n\nreturn {\n    json: {\n        ...sentEmail,\n        poll_start_time: Date.now(),\n        poll_max_duration: 24 * 60 * 60 * 1000, // 24 hours in ms\n        poll_count: 0,\n        reply_found: false\n    }\n};"
+            },
+            "id": "init-polling",
+            "name": "8. Initialize Polling",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "notes": "Stores metadata to track polling duration and reply status"
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "loop-start",
+            "name": "9. Loop Start",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                240,
+                0
+            ],
+            "notes": "Starts a loop that will check Gmail repeatedly"
+        },
+        {
+            "parameters": {
+                "amount": 60,
+                "unit": "seconds"
+            },
+            "id": "wait-interval",
+            "name": "⏱️ Wait 60 sec",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                480,
+                0
+            ],
+            "webhookId": "poll-interval-wait",
+            "notes": "Waits 60 seconds between Gmail checks"
+        },
+        {
+            "parameters": {
+                "authentication": "oAuth2",
+                "simple": false,
+                "filters": {
+                    "q": "=subject:(Meeting Summary) from:({{ $('8. Initialize Polling').first().json.host_email }}) is:unread newer_than:2h"
+                },
+                "returnAll": false,
+                "limit": 1
+            },
+            "id": "check-gmail",
+            "name": "10. Check Gmail",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                720,
+                0
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yn0da0X8KKRoG8H7",
+                    "name": "Gmail account"
+                }
+            },
+            "notes": "Searches for unread reply from host with 'Meeting Summary' in subject"
+        },
+        {
+            "parameters": {
+                "jsCode": "/**\n * CHECK IF REPLY RECEIVED\n * Returns loop control decision\n */\n\nconst pollingData = $('8. Initialize Polling').first().json;\nconst gmailResults = $input.all();\n\n// Check if we got an email\nconst replyFound = gmailResults.length > 0 && gmailResults[0].json.id;\n\n// Check timeout (24 hours)\nconst elapsed = Date.now() - pollingData.poll_start_time;\nconst timedOut = elapsed > pollingData.poll_max_duration;\n\n// Increment poll count\nconst pollCount = (pollingData.poll_count || 0) + 1;\n\nconsole.log(`Poll #${pollCount} | Reply found: ${replyFound} | Elapsed: ${Math.round(elapsed/1000/60)} min`);\n\nif (replyFound) {\n    // Found the reply! Extract email data\n    const email = gmailResults[0].json;\n    return {\n        json: {\n            ...pollingData,\n            reply_found: true,\n            reply_email: email,\n            reply_body: email.text || email.snippet || '',\n            reply_from: email.from?.emailAddress || email.from,\n            message_id: email.id,\n            should_continue_loop: false // STOP LOOP\n        }\n    };\n} else if (timedOut) {\n    // Timeout - no reply received\n    return {\n        json: {\n            ...pollingData,\n            reply_found: false,\n            timeout: true,\n            should_continue_loop: false // STOP LOOP\n        }\n    };\n} else {\n    // Keep polling\n    return {\n        json: {\n            ...pollingData,\n            poll_count: pollCount,\n            should_continue_loop: true // CONTINUE LOOP\n        }\n    };\n}"
+            },
+            "id": "check-status",
+            "name": "11. Check Status",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                960,
+                0
+            ],
+            "notes": "Determines if reply found, timed out, or should continue polling"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.should_continue_loop }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "continue-loop",
+            "name": "12. Continue Loop?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1200,
+                0
+            ],
+            "notes": "Routes back to loop if no reply yet, or exits if reply found/timeout"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.reply_found }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "reply-received",
+            "name": "13. Reply Received?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1440,
+                -100
+            ],
+            "notes": "Checks if we exited loop due to reply or timeout"
+        },
+        {
+            "parameters": {
+                "jsCode": "/**\n * PARSE HOST REPLY\n */\n\nconst data = $input.first().json;\nconst body = data.reply_body || '';\nconst bodyLower = body.toLowerCase();\n\nlet status = 'unknown';\nlet changes = '';\n\nif (bodyLower.includes('approved')) {\n    status = 'approved';\n    const match = body.match(/approved\\s*with\\s*changes?:?\\s*([\\s\\S]*)/i);\n    if (match) changes = match[1].trim().slice(0, 2000);\n} else if (bodyLower.includes('reject')) {\n    status = 'rejected';\n}\n\nreturn {\n    json: {\n        ...data,\n        approval_status: status,\n        host_suggestions: changes,\n        has_changes: changes.length > 0\n    }\n};"
+            },
+            "id": "parse-reply",
+            "name": "14. Parse Reply",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1680,
+                -200
+            ],
+            "notes": "Extracts approval status and changes from reply"
+        },
+        {
+            "parameters": {},
+            "id": "timeout-end",
+            "name": "⏱️ Timeout (No Reply)",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                1680,
+                0
+            ],
+            "notes": "Ends workflow if no reply received in 24 hours"
+        },
+        {
+            "parameters": {},
+            "id": "continue-to-approval",
+            "name": "→ Continue to Approval Flow",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                1920,
+                -200
+            ],
+            "notes": "Connect this to your 'Has Changes?' → 'Revise' → 'Send' flow"
+        }
+    ],
+    "connections": {
+        "8. Initialize Polling": {
+            "main": [
+                [
+                    {
+                        "node": "9. Loop Start",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "9. Loop Start": {
+            "main": [
+                [
+                    {
+                        "node": "⏱️ Wait 60 sec",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "⏱️ Wait 60 sec": {
+            "main": [
+                [
+                    {
+                        "node": "10. Check Gmail",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "10. Check Gmail": {
+            "main": [
+                [
+                    {
+                        "node": "11. Check Status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "11. Check Status": {
+            "main": [
+                [
+                    {
+                        "node": "12. Continue Loop?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "12. Continue Loop?": {
+            "main": [
+                [
+                    {
+                        "node": "9. Loop Start",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "13. Reply Received?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "13. Reply Received?": {
+            "main": [
+                [
+                    {
+                        "node": "14. Parse Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "⏱️ Timeout (No Reply)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "14. Parse Reply": {
+            "main": [
+                [
+                    {
+                        "node": "→ Continue to Approval Flow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

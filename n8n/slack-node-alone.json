@@ -1,0 +1,36 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "operation": "getAll",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0A72CZ6KUP",
+                    "mode": "id"
+                },
+                "returnAll": true,
+                "limit": 100,
+                "filters": {
+                    "types": [
+                        "message"
+                    ]
+                },
+                "options": {}
+            },
+            "id": "fetch-slack-dedicated",
+            "name": "1. Fetch Slack Messages",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.2,
+            "position": [
+                640,
+                400
+            ],
+            "credentials": {
+                "slackApi": {
+                    "id": "RlGIWP5X8KJNLptu",
+                    "name": "Slack account"
+                }
+            }
+        }
+    ]
+}

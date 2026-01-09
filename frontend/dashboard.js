@@ -3,11 +3,11 @@
  * Connects to Backend API (Supabase) and n8n
  */
 
-// Configuration - Uses config.js if available, fallback to localhost
-const CONFIG = window.E_SECRETARY_CONFIG || {};
-const API_URL = CONFIG.API_URL || 'http://localhost:3001/api';
-const N8N_URL = CONFIG.N8N_URL || 'http://localhost:5678';
-const REFRESH_INTERVAL = CONFIG.REFRESH_INTERVAL || 30000;
+// Configuration - Read from global config.js (DO NOT redeclare)
+const DASHBOARD_CONFIG = window.E_SECRETARY_CONFIG || {};
+const API_URL = DASHBOARD_CONFIG.API_URL || 'http://localhost:3001/api';
+const N8N_URL = DASHBOARD_CONFIG.N8N_URL || 'http://localhost:5678';
+const REFRESH_INTERVAL = DASHBOARD_CONFIG.REFRESH_INTERVAL || 30000;
 
 // DOM Elements
 const elements = {
@@ -29,6 +29,19 @@ const elements = {
 // State
 let meetings = [];
 let currentUser = null;
+let calendarConnected = false;
+
+/**
+ * Get time-based greeting
+ */
+function getGreeting(name) {
+    const hour = new Date().getHours();
+    let greeting = 'Good evening';
+    if (hour < 12) greeting = 'Good morning';
+    else if (hour < 17) greeting = 'Good afternoon';
+
+    return name ? `${greeting}, ${name.split(' ')[0]}!` : greeting;
+}
 
 /**
  * Initialize Dashboard
@@ -41,7 +54,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Set time-based greeting
+    const greetingEl = document.getElementById('greeting');
+    if (greetingEl && currentUser) {
+        greetingEl.textContent = getGreeting(currentUser.name);
+    }
+
+    // Check for calendar connection callback
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('calendar') === 'connected') {
+        showNotification('Google Calendar connected successfully!', 'success');
+        window.history.replaceState({}, '', '/dashboard.html');
+    }
+    if (urlParams.get('error')) {
+        showNotification('Failed to connect calendar. Please try again.', 'error');
+        window.history.replaceState({}, '', '/dashboard.html');
+    }
+
     checkN8nStatus();
+    checkCalendarStatus();
     loadMeetings();
     setupEventListeners();
 
@@ -84,25 +115,49 @@ async function checkAuth() {
 
         // Update UI with user data
         currentUser = data.user;
-        elements.userName.textContent = currentUser.name || 'User';
-        elements.userEmail.textContent = currentUser.email || 'user@email.com';
-        elements.userAvatar.textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+
+        // Critical: Update localStorage with fresh data
+        localStorage.setItem('e_secretary_user', JSON.stringify(currentUser));
+
+        // Update Text
+        elements.userName.textContent = currentUser.name; // strict: no fallback
+        elements.userEmail.textContent = currentUser.email;
+
+        // Avatar logic - Clean implementation
+        if (currentUser.profile_picture) {
+            elements.userAvatar.textContent = ''; // Clear initial text
+            elements.userAvatar.style.padding = '0';
+            elements.userAvatar.style.background = 'transparent';
+
+            const img = document.createElement('img');
+            img.src = currentUser.profile_picture;
+            img.alt = currentUser.name;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '50%';
+            elements.userAvatar.innerHTML = ''; // Start clean
+            elements.userAvatar.appendChild(img);
+        } else {
+            // Default avatar
+            elements.userAvatar.innerHTML = '';
+            elements.userAvatar.textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+            elements.userAvatar.style.padding = '';
+            elements.userAvatar.style.background = ''; // Revert to CSS default
+        }
 
         return true;
 
     } catch (error) {
         console.error('Auth check failed:', error);
-        // On network error, use cached user data if available
-        if (userData) {
-            try {
-                const user = JSON.parse(userData);
-                elements.userName.textContent = user.name || 'User';
-                elements.userEmail.textContent = user.email || 'user@email.com';
-                elements.userAvatar.textContent = (user.name || 'U').charAt(0).toUpperCase();
-                return true;
-            } catch (e) {
-                return false;
-            }
+
+        // If auth fails, DO NOT show stale data. Force re-login.
+        // This prevents the "User" confusion.
+        if (error.message !== 'Failed to fetch') {
+            localStorage.removeItem('e_secretary_token');
+            localStorage.removeItem('e_secretary_user');
+            window.location.href = 'login.html';
+            return false;
         }
         return false;
     }
@@ -268,7 +323,7 @@ function renderMeetings() {
     }
 
     elements.meetingsList.innerHTML = meetings
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
         .slice(0, 10)
         .map(meeting => `
             <div class="meeting-row" data-id="${meeting.id}">
@@ -279,7 +334,7 @@ function renderMeetings() {
                 </div>
                 <div class="meeting-info">
                     <div class="meeting-title">${meeting.title}</div>
-                    <div class="meeting-meta">${formatDate(meeting.date)} • ${meeting.attendees?.length || 0} attendees</div>
+                    <div class="meeting-meta">${formatDate(meeting.meeting_date || meeting.created_at)} • ${getAttendeeCount(meeting.attendees)} attendees</div>
                 </div>
                 <span class="meeting-status ${meeting.status}">${formatStatus(meeting.status)}</span>
             </div>
@@ -323,6 +378,23 @@ function formatStatus(status) {
 }
 
 /**
+ * Get attendee count from various formats
+ */
+function getAttendeeCount(attendees) {
+    if (!attendees) return 0;
+    if (Array.isArray(attendees)) return attendees.length;
+    if (typeof attendees === 'string') {
+        try {
+            const parsed = JSON.parse(attendees);
+            return Array.isArray(parsed) ? parsed.length : 0;
+        } catch {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+/**
  * Setup Event Listeners
  */
 function setupEventListeners() {
@@ -338,12 +410,16 @@ function setupEventListeners() {
         }, 500);
     });
 
-    // Logout button
-    elements.logoutBtn?.addEventListener('click', () => {
-        localStorage.removeItem('e_secretary_user');
-        localStorage.removeItem('e_secretary_token');
-        window.location.href = 'login.html';
-    });
+    // Logout
+    if (elements.logoutBtn) {
+        elements.logoutBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem('e_secretary_token');
+                localStorage.removeItem('e_secretary_user');
+                window.location.href = 'index.html'; // Redirect to Landing Page
+            }
+        });
+    }
 }
 
 /**
@@ -404,3 +480,123 @@ window.addTestMeeting = () => {
 
     console.log('Test meeting added:', testMeeting);
 };
+
+/**
+ * Check Google Calendar connection status
+ */
+async function checkCalendarStatus() {
+    const connectBtn = document.getElementById('connectCalendarBtn');
+    const statusBadge = document.getElementById('calendarStatus');
+
+    try {
+        const token = localStorage.getItem('e_secretary_token');
+        if (!token) return;
+
+        const response = await fetch(API_URL + '/calendar/status', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            calendarConnected = data.connected;
+
+            // Update header UI
+            if (data.connected) {
+                // Show "Connected" badge, hide button
+                if (connectBtn) connectBtn.style.display = 'none';
+                if (statusBadge) statusBadge.style.display = 'flex';
+            } else {
+                // Show "Connect" button, hide badge
+                if (connectBtn) connectBtn.style.display = 'flex';
+                if (statusBadge) statusBadge.style.display = 'none';
+            }
+
+            // Update nav item
+            const calendarNav = document.querySelector('[data-section="calendar"]');
+            if (calendarNav && data.connected) {
+                calendarNav.classList.add('connected');
+            }
+        }
+    } catch (error) {
+        console.error('Calendar status check failed:', error);
+        // On error, show connect button as fallback
+        if (connectBtn) connectBtn.style.display = 'flex';
+        if (statusBadge) statusBadge.style.display = 'none';
+    }
+}
+
+/**
+ * Connect Google Calendar
+ */
+async function connectCalendar() {
+    try {
+        const token = localStorage.getItem('e_secretary_token');
+        const response = await fetch(API_URL + '/calendar/auth-url', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            window.location.href = data.authUrl;
+        } else {
+            showNotification('Failed to start calendar connection', 'error');
+        }
+    } catch (error) {
+        console.error('Calendar connection error:', error);
+        showNotification('Failed to connect calendar', 'error');
+    }
+}
+
+/**
+ * Show notification toast
+ */
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.notification-toast').forEach(n => n.remove());
+
+    const toast = document.createElement('div');
+    toast.className = `notification-toast ${type}`;
+    toast.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">&times;</button>
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// Add notification animation
+const notificationStyle = document.createElement('style');
+notificationStyle.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .nav-item.connected::after {
+        content: '✓';
+        margin-left: auto;
+        color: #22c55e;
+        font-size: 0.75rem;
+    }
+`;
+document.head.appendChild(notificationStyle);
+
+// Expose for debugging
+window.connectCalendar = connectCalendar;

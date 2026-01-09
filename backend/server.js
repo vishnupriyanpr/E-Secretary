@@ -1,6 +1,7 @@
 /**
  * E-Secretary Backend Server
  * Express.js API with Supabase PostgreSQL
+ * Production-Ready with Security Headers
  */
 
 require('dotenv').config();
@@ -19,18 +20,83 @@ const webhookRouter = require('./routes/webhook');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// --- PRODUCTION SECURITY MIDDLEWARE ---
+
+// Security headers (inline implementation - no external dependency)
+app.use((req, res, next) => {
+    // Prevent clickjacking
+    res.setHeader('X-Frame-Options', 'DENY');
+    // Prevent MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // XSS protection
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // Referrer policy
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Permissions policy
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // Remove Express fingerprint
+    res.removeHeader('X-Powered-By');
+    next();
+});
+
+// Rate limiting for auth endpoints (only in production, more lenient in dev)
+const authRateLimiter = (() => {
+    const attempts = new Map();
+    const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+    const MAX_ATTEMPTS = process.env.NODE_ENV === 'production' ? 20 : 100; // More lenient in dev
+
+    return (req, res, next) => {
+        if (!req.path.startsWith('/api/auth')) return next();
+
+        const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        const now = Date.now();
+        const record = attempts.get(ip) || { count: 0, resetAt: now + WINDOW_MS };
+
+        if (now > record.resetAt) {
+            record.count = 0;
+            record.resetAt = now + WINDOW_MS;
+        }
+
+        record.count++;
+        attempts.set(ip, record);
+
+        if (record.count > MAX_ATTEMPTS) {
+            return res.status(429).json({
+                success: false,
+                error: 'Too many requests. Please try again later.'
+            });
+        }
+
+        next();
+    };
+})();
+
+app.use(authRateLimiter);
+
+// CORS configuration
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:5500',
-        'http://127.0.0.1:5500',
-        'http://localhost:5501',
-        'http://127.0.0.1:5501',
-        // Allow file:// protocol for local HTML files
-        'null'
-    ],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        // Allowed domains
+        const allowedDomains = [
+            'localhost',
+            '127.0.0.1',
+            'vercel.app',
+            'onrender.com'
+        ];
+
+        const isAllowed = allowedDomains.some(domain => origin.includes(domain));
+        if (isAllowed) return callback(null, true);
+
+        // Block unknown origins in production
+        if (process.env.NODE_ENV === 'production') {
+            return callback(new Error('Not allowed by CORS'));
+        }
+
+        callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -39,10 +105,12 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging
+// Request logging (minimal in production)
 app.use((req, res, next) => {
-    const timestamp = new Date().toISOString();
-    console.log(`${timestamp} | ${req.method} ${req.path}`);
+    if (process.env.NODE_ENV !== 'production' || req.path.startsWith('/api')) {
+        const timestamp = new Date().toISOString();
+        console.log(`${timestamp} | ${req.method} ${req.path}`);
+    }
     next();
 });
 
@@ -60,6 +128,10 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/webhook', webhookRouter);
+
+// Calendar routes (Google Calendar integration)
+const calendarRouter = require('./routes/calendar');
+app.use('/api/calendar', calendarRouter);
 
 // Serve static files (frontend)
 app.use(express.static(path.join(__dirname, '../frontend')));

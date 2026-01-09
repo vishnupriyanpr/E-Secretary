@@ -1,0 +1,13 @@
+SUPABASE : --------------------------------------------------
+host : aws-1-ap-south-1.pooler.supabase.com
+port : 6543
+database : postgres
+user : postgres.kbyksovlslnrbeyklxtn
+pool_mode : transaction
+db pass : Vishnu@123_V
+project url : https://kbyksovlslnrbeyklxtn.supabase.co 
+api key : sb_publishable_TML5rnltDXoPl84_-qFG8g_vOvI4FQA
+-------------------------------------------------------------
+
+render deployment webhook : https://e-secretary-beta.onrender.com
+n8n encryption key : 4f923abc819e42d7b5e1a0c9f8d7e6b5a4c3d2e1

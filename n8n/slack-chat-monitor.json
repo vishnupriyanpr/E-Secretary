@@ -1,0 +1,237 @@
+{
+    "name": "E - Secretary : Slack Monitor (HTTP API)",
+    "nodes": [
+        {
+            "parameters": {},
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                300,
+                340
+            ],
+            "id": "manual-trigger",
+            "name": "🔴 Manual Test"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "=https://slack.com/api/conversations.history?channel=C0A72CZ6KUP&limit=100",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {}
+            },
+            "id": "fetch-slack-http",
+            "name": "1. Fetch via HTTP",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                540,
+                340
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "slack_token_header",
+                    "name": "Slack Bot Token"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract messages from Slack API response\nconst slackResponse = $input.first().json;\n\nif (!slackResponse.ok) {\n  throw new Error('Slack API Error: ' + slackResponse.error);\n}\n\nconst messages = slackResponse.messages || [];\n\nif (messages.length === 0) {\n  throw new Error('❌ No messages! Check bot is in channel C0A72CZ6KUP');\n}\n\n// Format for AI\nconst formatted = messages.map(msg => {\n  const ts = new Date(parseFloat(msg.ts) * 1000);\n  const time = ts.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'});\n  const user = msg.user || 'Unknown';\n  const text = (msg.text || '').replace(/<[^>]*>/g, '');\n  return `[${time}] ${user}: ${text}`;\n}).reverse().join('\\n');\n\n// Build Groq request\nconst groqBody = {\n  model: \"llama-3.3-70b-versatile\",\n  messages: [\n    {role: \"system\", content: \"You analyze Slack chats. Output ONLY JSON.\"},\n    {role: \"user\", content: `Analyze these messages:\\n\\n${formatted}\\n\\nProvide JSON with:\\n- summary: Brief 2-3 sentence summary\\n- key_topics: Array of main topics\\n- action_items: Array of tasks\\n- urgent_items: Array of urgent issues\\n- urgency_score: 1-10 (8+ = urgent)\\n- call_script: Natural 40-word phone message starting with 'Hello, E-Secretary here.'`}\n  ],\n  response_format: {type: \"json_object\"}\n};\n\nreturn {json: {msg_count: messages.length, groq_body: groqBody}};"
+            },
+            "id": "format-build",
+            "name": "2. Format & Build",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                780,
+                340
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.groq.com/openai/v1/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json.groq_body }}",
+                "options": {}
+            },
+            "id": "groq-api",
+            "name": "3. AI Analysis",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1020,
+                340
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "groq_api_key",
+                    "name": "Groq API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Parse AI + Format Beautiful SMS\nconst ai = $input.first().json;\nconst prevData = $('2. Format & Build').first().json;\nlet parsed = {};\n\ntry {\n  parsed = JSON.parse(ai.choices[0].message.content);\n} catch(e) {\n  parsed = {summary: 'Parse error', key_topics: [], action_items: [], urgent_items: [], urgency_score: 5, call_script: 'Error'};\n}\n\n// Build BEAUTIFUL ASCII SMS\nconst now = new Date().toLocaleString('en-IN', {dateStyle: 'medium', timeStyle: 'short'});\nlet sms = '*** E-SECRETARY REPORT ***\\n';\nsms += '============================\\n';\nsms += `>> Date: ${now}\\n`;\nsms += `>> Messages: ${prevData.msg_count}\\n`;\nsms += `>> Urgency: ${parsed.urgency_score}/10\\n`;\nsms += '============================\\n\\n';\n\nsms += '--- SUMMARY ---\\n' + parsed.summary + '\\n\\n';\n\nif (parsed.key_topics?.length) {\n  sms += '--- KEY TOPICS ---\\n';\n  parsed.key_topics.slice(0,3).forEach(t => {sms += `  * ${t}\\n`;});\n  sms += '\\n';\n}\n\nif (parsed.urgent_items?.length) {\n  sms += '!!! URGENT ITEMS !!!\\n';\n  parsed.urgent_items.forEach(u => {sms += `  >> ${u}\\n`;});\n  sms += '\\n';\n}\n\nif (parsed.action_items?.length) {\n  sms += '--- ACTION ITEMS ---\\n';\n  parsed.action_items.forEach(a => {sms += `  [ ] ${a}\\n`;});\n  sms += '\\n';\n}\n\nsms += '============================\\n';\nsms += '~ E-Secretary AI ~';\n\nconst finalSms = sms.length > 1550 ? sms.substring(0, 1547) + '...' : sms;\nconst cleanCall = (parsed.call_script || 'Error').replace(/[*#<>]/g, '');\n\nreturn {json: {sms_message: finalSms, call_message: cleanCall}};"
+            },
+            "id": "parse-format",
+            "name": "4. Parse & Format",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1260,
+                340
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "call",
+                "from": "+15418542996",
+                "to": "+919843120999",
+                "message": "={{ $json.call_message }}",
+                "options": {}
+            },
+            "id": "twilio-call",
+            "name": "5. Make Call",
+            "type": "n8n-nodes-base.twilio",
+            "typeVersion": 1,
+            "position": [
+                1500,
+                240
+            ],
+            "credentials": {
+                "twilioApi": {
+                    "id": "LwOA0q36QKzlDe17",
+                    "name": "Twilio account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "from": "+15418542996",
+                "to": "+919843120999",
+                "message": "={{ $json.sms_message }}",
+                "options": {}
+            },
+            "id": "twilio-sms",
+            "name": "6. Send SMS",
+            "type": "n8n-nodes-base.twilio",
+            "typeVersion": 1,
+            "position": [
+                1500,
+                440
+            ],
+            "credentials": {
+                "twilioApi": {
+                    "id": "LwOA0q36QKzlDe17",
+                    "name": "Twilio account"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "done",
+            "name": "✅ Done",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                1720,
+                340
+            ]
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "🔴 Manual Test": {
+            "main": [
+                [
+                    {
+                        "node": "1. Fetch via HTTP",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "1. Fetch via HTTP": {
+            "main": [
+                [
+                    {
+                        "node": "2. Format & Build",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "2. Format & Build": {
+            "main": [
+                [
+                    {
+                        "node": "3. AI Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "3. AI Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "4. Parse & Format",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "4. Parse & Format": {
+            "main": [
+                [
+                    {
+                        "node": "5. Make Call",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "6. Send SMS",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "5. Make Call": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Done",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "6. Send SMS": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Done",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": []
+}
